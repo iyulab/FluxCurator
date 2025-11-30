@@ -96,13 +96,12 @@ public sealed class ChunkerFactory : IChunkerFactory
         RegisterChunker(ChunkingStrategy.Token, () => new TokenChunker());
         RegisterChunker(ChunkingStrategy.Sentence, () => new SentenceChunker());
         RegisterChunker(ChunkingStrategy.Paragraph, () => new ParagraphChunker());
+        RegisterChunker(ChunkingStrategy.Hierarchical, () => new HierarchicalChunker());
 
         // Register semantic chunker if embedder is available
         if (_embedder != null)
         {
             RegisterChunker(ChunkingStrategy.Semantic, () => new SemanticChunker(_embedder));
         }
-
-        // TODO: Add Hierarchical chunker when implemented
     }
 }
