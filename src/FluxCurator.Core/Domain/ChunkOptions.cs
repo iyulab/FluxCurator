@@ -1,0 +1,142 @@
+namespace FluxCurator.Core.Domain;
+
+/// <summary>
+/// Configuration options for text chunking operations.
+/// </summary>
+public sealed class ChunkOptions
+{
+    /// <summary>
+    /// Gets or sets the chunking strategy to use.
+    /// Default: Auto (automatically select based on content).
+    /// </summary>
+    public ChunkingStrategy Strategy { get; set; } = ChunkingStrategy.Auto;
+
+    /// <summary>
+    /// Gets or sets the target chunk size in tokens.
+    /// Default: 512 tokens.
+    /// </summary>
+    public int TargetChunkSize { get; set; } = 512;
+
+    /// <summary>
+    /// Gets or sets the minimum chunk size in tokens.
+    /// Chunks smaller than this will be merged with adjacent chunks.
+    /// Default: 100 tokens.
+    /// </summary>
+    public int MinChunkSize { get; set; } = 100;
+
+    /// <summary>
+    /// Gets or sets the maximum chunk size in tokens.
+    /// Chunks larger than this will be split.
+    /// Default: 1024 tokens.
+    /// </summary>
+    public int MaxChunkSize { get; set; } = 1024;
+
+    /// <summary>
+    /// Gets or sets the overlap size in tokens between consecutive chunks.
+    /// Helps maintain context across chunk boundaries.
+    /// Default: 50 tokens.
+    /// </summary>
+    public int OverlapSize { get; set; } = 50;
+
+    /// <summary>
+    /// Gets or sets the ISO 639-1 language code for text processing.
+    /// When null, language will be auto-detected.
+    /// Default: null (auto-detect).
+    /// </summary>
+    public string? LanguageCode { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to preserve paragraph boundaries where possible.
+    /// Default: true.
+    /// </summary>
+    public bool PreserveParagraphs { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to preserve sentence boundaries where possible.
+    /// Default: true.
+    /// </summary>
+    public bool PreserveSentences { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to detect and preserve section headers.
+    /// Default: true.
+    /// </summary>
+    public bool PreserveSectionHeaders { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the similarity threshold for semantic chunking.
+    /// Lower values create more chunks at semantic boundaries.
+    /// Range: 0.0 to 1.0. Default: 0.5.
+    /// </summary>
+    public float SemanticSimilarityThreshold { get; set; } = 0.5f;
+
+    /// <summary>
+    /// Gets or sets whether to include chunk metadata (position, quality scores, etc.).
+    /// Default: true.
+    /// </summary>
+    public bool IncludeMetadata { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to trim whitespace from chunk boundaries.
+    /// Default: true.
+    /// </summary>
+    public bool TrimWhitespace { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to normalize whitespace within chunks.
+    /// Multiple spaces/newlines become single spaces.
+    /// Default: false.
+    /// </summary>
+    public bool NormalizeWhitespace { get; set; } = false;
+
+    /// <summary>
+    /// Creates default chunking options.
+    /// </summary>
+    public static ChunkOptions Default => new();
+
+    /// <summary>
+    /// Creates options optimized for RAG (Retrieval-Augmented Generation) workloads.
+    /// </summary>
+    public static ChunkOptions ForRAG => new()
+    {
+        Strategy = ChunkingStrategy.Semantic,
+        TargetChunkSize = 512,
+        MinChunkSize = 128,
+        MaxChunkSize = 1024,
+        OverlapSize = 64,
+        PreserveSentences = true,
+        PreserveParagraphs = true,
+        IncludeMetadata = true
+    };
+
+    /// <summary>
+    /// Creates options optimized for Korean text processing.
+    /// </summary>
+    public static ChunkOptions ForKorean => new()
+    {
+        Strategy = ChunkingStrategy.Sentence,
+        TargetChunkSize = 400,
+        MinChunkSize = 80,
+        MaxChunkSize = 800,
+        OverlapSize = 40,
+        LanguageCode = "ko",
+        PreserveSentences = true,
+        PreserveParagraphs = true
+    };
+
+    /// <summary>
+    /// Creates options for fixed-size token chunking.
+    /// </summary>
+    /// <param name="tokenSize">Target token size per chunk.</param>
+    /// <param name="overlap">Overlap tokens between chunks.</param>
+    public static ChunkOptions FixedSize(int tokenSize, int overlap = 50) => new()
+    {
+        Strategy = ChunkingStrategy.Token,
+        TargetChunkSize = tokenSize,
+        MinChunkSize = tokenSize / 4,
+        MaxChunkSize = tokenSize * 2,
+        OverlapSize = overlap,
+        PreserveSentences = false,
+        PreserveParagraphs = false
+    };
+}

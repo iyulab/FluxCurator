@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>FluxCurator</PackageId>
+    <Description>Text preprocessing library for RAG pipelines: PII masking, content filtering, and intelligent chunking including semantic chunking with Korean language support.</Description>
+    <PackageTags>rag;chunking;pii;masking;nlp;korean;text-processing;preprocessing;semantic</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FluxCurator.Core\FluxCurator.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LocalEmbedder" />
+  </ItemGroup>
+
+</Project>

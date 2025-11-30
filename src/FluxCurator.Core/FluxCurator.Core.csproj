@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>FluxCurator.Core</PackageId>
+    <Description>Core library for FluxCurator - Zero dependencies. PII masking, content filtering, and rule-based chunking with Korean language support.</Description>
+    <PackageTags>rag;chunking;pii;masking;nlp;korean;text-processing;preprocessing</PackageTags>
+  </PropertyGroup>
+
+</Project>

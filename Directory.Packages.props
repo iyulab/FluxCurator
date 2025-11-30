@@ -1,0 +1,8 @@
+<Project>
+
+  <ItemGroup>
+    <!-- Project References -->
+    <PackageVersion Include="LocalEmbedder" Version="0.3.1" />
+  </ItemGroup>
+
+</Project>
