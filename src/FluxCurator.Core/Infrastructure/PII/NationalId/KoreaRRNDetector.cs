@@ -1,26 +1,36 @@
-namespace FluxCurator.Core.Infrastructure.PII;
+namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
 using FluxCurator.Core.Domain;
 
 /// <summary>
-/// Detects Korean Resident Registration Numbers (주민등록번호).
+/// Detects Korean Resident Registration Numbers (RRN / 주민등록번호).
 /// Validates using the Modulo-11 checksum algorithm.
+/// Format: YYMMDD-GNNNNNN (13 digits)
 /// </summary>
-public sealed class KoreanRRNDetector : PIIDetectorBase
+public sealed class KoreaRRNDetector : NationalIdDetectorBase
 {
     // Weights for Modulo-11 checksum: 2,3,4,5,6,7,8,9,2,3,4,5
-    private static readonly int[] ChecksumWeights = { 2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5 };
+    private static readonly int[] ChecksumWeights = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5];
 
     /// <inheritdoc/>
-    public override PIIType PIIType => PIIType.KoreanRRN;
+    public override string LanguageCode => "ko";
 
     /// <inheritdoc/>
-    public override string Name => "Korean RRN Detector";
+    public override string NationalIdType => "RRN";
+
+    /// <inheritdoc/>
+    public override string FormatDescription => "YYMMDD-GNNNNNN (13 digits with Modulo-11 checksum)";
+
+    /// <inheritdoc/>
+    public override string CountryName => "South Korea";
+
+    /// <inheritdoc/>
+    public override string Name => "Korea RRN Detector";
 
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: YYMMDD-GNNNNNN or YYMMDDGNNNNNN
-        @"\d{6}[-\s]?[1-4]\d{6}";
+        @"\d{6}[-\s]?[1-8]\d{6}";
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)
@@ -46,8 +56,9 @@ public sealed class KoreanRRNDetector : PIIDetectorBase
         }
 
         // Validate gender digit (7th digit)
+        // 1,2: 1900s Korean, 3,4: 2000s Korean, 5,6: 1900s Foreign, 7,8: 2000s Foreign
         var genderDigit = normalized[6] - '0';
-        if (genderDigit < 1 || genderDigit > 4)
+        if (genderDigit < 1 || genderDigit > 8)
         {
             confidence = 0.4f;
             return false;
@@ -83,9 +94,9 @@ public sealed class KoreanRRNDetector : PIIDetectorBase
         }
 
         // Determine century based on gender digit
-        // 1,2: 1900s, 3,4: 2000s
+        // 1,2,5,6: 1900s, 3,4,7,8: 2000s
         var gender = genderDigit - '0';
-        var century = gender <= 2 ? 1900 : 2000;
+        var century = (gender <= 2 || gender == 5 || gender == 6) ? 1900 : 2000;
         var fullYear = century + year;
 
         // Validate month
@@ -93,9 +104,16 @@ public sealed class KoreanRRNDetector : PIIDetectorBase
             return false;
 
         // Validate day based on month
-        var daysInMonth = DateTime.DaysInMonth(fullYear, month);
-        if (day < 1 || day > daysInMonth)
+        try
+        {
+            var daysInMonth = DateTime.DaysInMonth(fullYear, month);
+            if (day < 1 || day > daysInMonth)
+                return false;
+        }
+        catch
+        {
             return false;
+        }
 
         // Check if date is not in the future
         var birthDate = new DateTime(fullYear, month, day);
@@ -141,8 +159,8 @@ public sealed class KoreanRRNDetector : PIIDetectorBase
         var genderDigit = normalized[6] - '0';
         return genderDigit switch
         {
-            1 or 3 => "Male",
-            2 or 4 => "Female",
+            1 or 3 or 5 or 7 => "Male",
+            2 or 4 or 6 or 8 => "Female",
             _ => null
         };
     }
@@ -160,7 +178,7 @@ public sealed class KoreanRRNDetector : PIIDetectorBase
             return null;
 
         var genderDigit = normalized[6] - '0';
-        var century = genderDigit <= 2 ? 1900 : 2000;
+        var century = (genderDigit <= 2 || genderDigit == 5 || genderDigit == 6) ? 1900 : 2000;
 
         return century + year;
     }

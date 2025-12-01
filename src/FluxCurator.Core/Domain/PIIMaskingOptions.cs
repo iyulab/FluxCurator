@@ -44,12 +44,21 @@ public enum MaskingStrategy
 
 /// <summary>
 /// Configuration options for PII masking operations.
+/// Supports multilingual PII detection through language codes.
 /// </summary>
 public sealed class PIIMaskingOptions
 {
     /// <summary>
+    /// Gets or sets the target language codes for PII detection.
+    /// Uses ISO 639-1 codes (e.g., "ko", "en", "ja") or IETF tags (e.g., "en-US", "zh-CN").
+    /// Multiple languages can be specified for multilingual documents.
+    /// Use "auto" to detect PII for all supported languages (default).
+    /// </summary>
+    public IReadOnlyList<string> LanguageCodes { get; set; } = ["auto"];
+
+    /// <summary>
     /// Gets or sets which PII types to detect and mask.
-    /// Default: Common (Email, Phone, KoreanRRN, CreditCard).
+    /// Default: Common (Email, Phone, NationalId, CreditCard).
     /// </summary>
     public PIIType TypesToMask { get; set; } = PIIType.Common;
 
@@ -66,7 +75,7 @@ public sealed class PIIMaskingOptions
     public float MinConfidence { get; set; } = 0.8f;
 
     /// <summary>
-    /// Gets or sets whether to validate detected patterns (e.g., RRN checksum).
+    /// Gets or sets whether to validate detected patterns (e.g., checksum validation).
     /// Default: true.
     /// </summary>
     public bool ValidatePatterns { get; set; } = true;
@@ -118,10 +127,11 @@ public sealed class PIIMaskingOptions
         {
             PIIType.Email => "[EMAIL]",
             PIIType.Phone => "[PHONE]",
-            PIIType.KoreanRRN => "[RRN]",
+            PIIType.NationalId => "[NATIONAL_ID]",
+            PIIType.TaxId => "[TAX_ID]",
+            PIIType.SocialSecurityNumber => "[SSN]",
             PIIType.CreditCard => "[CARD]",
             PIIType.BankAccount => "[ACCOUNT]",
-            PIIType.KoreanBRN => "[BRN]",
             PIIType.Passport => "[PASSPORT]",
             PIIType.DriversLicense => "[LICENSE]",
             PIIType.IPAddress => "[IP]",
@@ -133,26 +143,49 @@ public sealed class PIIMaskingOptions
         };
     }
 
+    // ========================================
+    // Factory Methods - Language-Agnostic (Recommended)
+    // ========================================
+
     /// <summary>
     /// Creates default masking options optimized for RAG.
+    /// Detects PII for all supported languages.
     /// </summary>
     public static PIIMaskingOptions Default => new();
 
     /// <summary>
-    /// Creates options for Korean document processing.
+    /// Creates options for a specific language/region.
     /// </summary>
-    public static PIIMaskingOptions ForKorean => new()
+    /// <param name="languageCode">ISO 639-1 language code or IETF tag (e.g., "ko", "en-US", "ja")</param>
+    /// <returns>Options configured for the specified language.</returns>
+    public static PIIMaskingOptions ForLanguage(string languageCode) => new()
     {
-        TypesToMask = PIIType.Korean | PIIType.Email | PIIType.CreditCard,
+        LanguageCodes = [languageCode],
+        TypesToMask = PIIType.Common,
         Strategy = MaskingStrategy.Token,
         ValidatePatterns = true
     };
 
     /// <summary>
-    /// Creates options for strict masking (all PII types).
+    /// Creates options for multiple languages.
+    /// Useful for multilingual documents.
+    /// </summary>
+    /// <param name="languageCodes">ISO 639-1 language codes or IETF tags.</param>
+    /// <returns>Options configured for the specified languages.</returns>
+    public static PIIMaskingOptions ForLanguages(params string[] languageCodes) => new()
+    {
+        LanguageCodes = languageCodes,
+        TypesToMask = PIIType.Common,
+        Strategy = MaskingStrategy.Token,
+        ValidatePatterns = true
+    };
+
+    /// <summary>
+    /// Creates options for strict masking (all PII types, all languages).
     /// </summary>
     public static PIIMaskingOptions Strict => new()
     {
+        LanguageCodes = ["auto"],
         TypesToMask = PIIType.All,
         Strategy = MaskingStrategy.Token,
         MinConfidence = 0.7f,
@@ -164,6 +197,7 @@ public sealed class PIIMaskingOptions
     /// </summary>
     public static PIIMaskingOptions Partial => new()
     {
+        LanguageCodes = ["auto"],
         TypesToMask = PIIType.Common,
         Strategy = MaskingStrategy.Partial,
         PartialPreserveCount = 3

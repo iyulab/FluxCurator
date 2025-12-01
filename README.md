@@ -8,19 +8,19 @@ Clean, protect, and chunk your text for RAG pipelines — no dependencies requir
 
 ## Overview
 
-FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides PII masking, content filtering, and intelligent text chunking with first-class Korean language support.
+FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 10+ languages.
 
 **Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds optional LocalEmbedder integration for semantic chunking.
 
 ## Features
 
-- **PII Masking** - Auto-detect and mask emails, phone numbers, Korean RRN, credit cards
+- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs, credit cards across 10+ languages
 - **Content Filtering** - Filter harmful content with customizable rules and blocklists
 - **Smart Chunking** - Rule-based chunking (sentence, paragraph, token)
 - **Semantic Chunking** - Embedding-based chunking for semantic boundaries
 - **Hierarchical Chunking** - Document structure-aware chunking with parent-child relationships
-- **Korean-First Design** - Optimized for Korean text (습니다체, 해요체, sentence endings)
 - **Multi-Language Support** - 11 languages including Korean, English, Japanese, Chinese
+- **National ID Validation** - Checksum validation for SSN (US), RRN (Korea), NINO (UK), CPF (Brazil), and more
 - **Pipeline Processing** - Combine filtering, masking, and chunking in one call
 - **Dependency Injection** - Full DI support with `IServiceCollection` extensions
 - **FileFlux Integration** - Seamless integration with FileFlux document processing
@@ -114,15 +114,27 @@ Console.WriteLine(result.MaskedText);
 // Output: "Contact: [PHONE], Email: [EMAIL]"
 ```
 
-### Korean RRN Detection
+### Multilingual National ID Detection
 
 ```csharp
+// Auto-detect PII for all supported languages
 var curator = new FluxCurator()
-    .WithPIIMasking(PIIMaskingOptions.ForKorean);
+    .WithPIIMasking(PIIMaskingOptions.Default);
 
-var result = curator.MaskPII("RRN: 901231-1234567");
-// Output: "RRN: [RRN]"
+var result = curator.MaskPII("SSN: 123-45-6789, RRN: 901231-1234567");
+// Output: "SSN: [NATIONAL_ID], RRN: [NATIONAL_ID]"
+
+// Detect for specific language
+var koreanCurator = new FluxCurator()
+    .WithPIIMasking(PIIMaskingOptions.ForLanguage("ko"));
+
+var krResult = koreanCurator.MaskPII("주민등록번호: 901231-1234567");
+// Output: "주민등록번호: [NATIONAL_ID]"
 // Validates using Modulo-11 checksum algorithm
+
+// Detect for multiple languages
+var multiCurator = new FluxCurator()
+    .WithPIIMasking(PIIMaskingOptions.ForLanguages("en-US", "ko", "pt-BR"));
 ```
 
 ### Hierarchical Chunking
@@ -155,8 +167,8 @@ foreach (var chunk in chunks)
 // Complete preprocessing pipeline
 var curator = new FluxCurator()
     .WithContentFiltering()
-    .WithPIIMasking()
-    .WithChunkingOptions(ChunkOptions.ForKorean);
+    .WithPIIMasking(PIIMaskingOptions.ForLanguages("en", "ko", "ja"))
+    .WithChunkingOptions(ChunkOptions.ForRAG);
 
 // Process: Filter → Mask PII → Chunk
 var result = await curator.PreprocessAsync(text);
@@ -212,13 +224,31 @@ FluxCurator includes language profiles for accurate sentence detection and token
 
 ## PII Types Supported
 
+### Global PII Types
+
 | Type | Description | Validation |
 |------|-------------|------------|
 | `Email` | Email addresses | TLD validation |
-| `Phone` | Phone numbers (KR/US/International) | Format validation |
-| `KoreanRRN` | Korean Resident Registration Number | Modulo-11 checksum |
+| `Phone` | Phone numbers (International) | E.164 format validation |
 | `CreditCard` | Credit card numbers | Luhn algorithm |
-| `KoreanBRN` | Korean Business Registration Number | Format validation |
+| `BankAccount` | Bank account numbers | Format validation |
+| `IPAddress` | IPv4 and IPv6 addresses | Format validation |
+| `URL` | URLs and web addresses | Format validation |
+
+### National ID Types by Country
+
+| Country | Language Code | ID Type | Validation |
+|---------|---------------|---------|------------|
+| Korea | `ko` | Resident Registration Number (RRN) | Modulo-11 checksum |
+| USA | `en-US` | Social Security Number (SSN) | Area/Group validation |
+| UK | `en-GB` | National Insurance Number (NINO) | Prefix/Suffix validation |
+| Japan | `ja` | My Number | Check digit validation |
+| China | `zh-CN` | ID Card Number | ISO 7064 MOD 11-2 |
+| Germany | `de` | Personalausweis / Steuer-ID | Check digit validation |
+| France | `fr` | INSEE Number | Modulo-97 validation |
+| Spain | `es` | DNI / NIE | Check letter validation |
+| Brazil | `pt-BR` | CPF | Dual Modulo-11 |
+| Italy | `it` | Codice Fiscale | Check character validation |
 
 ## Configuration Options
 
@@ -241,7 +271,6 @@ var options = new ChunkOptions
 // Preset configurations
 ChunkOptions.Default       // General purpose
 ChunkOptions.ForRAG        // Optimized for RAG (512 target, semantic)
-ChunkOptions.ForKorean     // Optimized for Korean (400 target)
 ChunkOptions.FixedSize(256, 32)  // Fixed token size with overlap
 ```
 
@@ -255,6 +284,130 @@ ChunkOptions.FixedSize(256, 32)  // Fixed token size with overlap
 | `Partial` | `jo**@ex****.com` |
 | `Hash` | `[HASH:a1b2c3d4]` |
 | `Remove` | *(empty)* |
+
+## Extensibility
+
+FluxCurator is designed for extensibility. You can add custom PII detectors for your specific needs.
+
+### Custom PII Detector
+
+Implement `IPIIDetector` or extend `PIIDetectorBase` for pattern-based detection:
+
+```csharp
+using FluxCurator.Core.Core;
+using FluxCurator.Core.Domain;
+using FluxCurator.Core.Infrastructure.PII;
+
+public class EmployeeIdDetector : PIIDetectorBase
+{
+    public override PIIType PIIType => PIIType.Custom;
+    public override string Name => "Employee ID Detector";
+
+    // Pattern: EMP-123456
+    protected override string Pattern => @"EMP-\d{6}";
+
+    protected override bool ValidateMatch(string value, out float confidence)
+    {
+        confidence = 0.95f;
+        return true;
+    }
+}
+
+// Register and use
+var masker = new PIIMasker(PIIMaskingOptions.Default);
+masker.RegisterDetector(new EmployeeIdDetector());
+
+var result = masker.Mask("Contact employee EMP-123456 for details.");
+// Output: "Contact employee [PII] for details."
+```
+
+### Custom National ID Detector
+
+Extend `NationalIdDetectorBase` to add support for additional countries:
+
+```csharp
+using FluxCurator.Core.Core;
+using FluxCurator.Core.Infrastructure.PII.NationalId;
+
+public class IndiaAadhaarDetector : NationalIdDetectorBase
+{
+    public override string LanguageCode => "hi";
+    public override string NationalIdType => "Aadhaar";
+    public override string FormatDescription => "12 digits with optional spaces";
+    public override string CountryName => "India";
+    public override string Name => "India Aadhaar Detector";
+
+    // Pattern: 1234 5678 9012 or 123456789012
+    protected override string Pattern => @"\d{4}\s?\d{4}\s?\d{4}";
+
+    protected override bool ValidateMatch(string value, out float confidence)
+    {
+        var normalized = NormalizeValue(value);
+
+        if (normalized.Length != 12 || !normalized.All(char.IsDigit))
+        {
+            confidence = 0.0f;
+            return false;
+        }
+
+        // Implement Verhoeff checksum validation
+        if (!ValidateVerhoeffChecksum(normalized))
+        {
+            confidence = 0.6f;
+            return true; // Still flag as PII
+        }
+
+        confidence = 0.98f;
+        return true;
+    }
+
+    private static bool ValidateVerhoeffChecksum(string number)
+    {
+        // Verhoeff algorithm implementation
+        // ...
+        return true;
+    }
+}
+
+// Register with the national ID registry
+var registry = new NationalIdRegistry();
+registry.Register(new IndiaAadhaarDetector());
+
+var masker = new PIIMasker(
+    PIIMaskingOptions.ForLanguage("hi"),
+    registry);
+```
+
+### Dependency Injection with Custom Detectors
+
+```csharp
+// Register custom registry with additional detectors
+services.AddSingleton<INationalIdRegistry>(sp =>
+{
+    var registry = new NationalIdRegistry();
+    registry.Register(new IndiaAadhaarDetector());
+    registry.Register(new CanadaSINDetector());
+    registry.Register(new AustraliaTFNDetector());
+    return registry;
+});
+
+// Register PIIMasker with custom registry
+services.AddScoped<IPIIMasker>(sp =>
+{
+    var registry = sp.GetRequiredService<INationalIdRegistry>();
+    var options = PIIMaskingOptions.ForLanguages("en", "hi");
+    return new PIIMasker(options, registry);
+});
+```
+
+### Extension Points Summary
+
+| Interface | Base Class | Purpose |
+|-----------|------------|---------|
+| `IPIIDetector` | `PIIDetectorBase` | General PII detection (email, phone, custom) |
+| `INationalIdDetector` | `NationalIdDetectorBase` | Country-specific national ID detection |
+| `INationalIdRegistry` | `NationalIdRegistry` | Manage and lookup national ID detectors |
+| `IPIIMasker` | `PIIMasker` | Coordinate detection and masking |
 
 ## Integration with Iyulab Ecosystem
 
@@ -362,15 +515,16 @@ FluxCurator/
 ## Roadmap
 
 - [x] Core chunking strategies (Sentence, Paragraph, Token)
-- [x] Korean language profile with 11 language support
+- [x] 11 language profiles for text processing
 - [x] Language detection
 - [x] Batch processing
-- [x] PII masking (Korean RRN, phone, email, credit card)
+- [x] Multilingual PII masking (10 countries)
 - [x] Content filtering
 - [x] Semantic chunking
 - [x] Hierarchical chunking
 - [x] Dependency Injection support
 - [x] FileFlux integration
+- [ ] Additional national ID detectors (India, Canada, Australia)
 - [ ] Additional language profiles (Vietnamese, Thai)
 - [ ] Custom detector registration
 - [ ] Streaming chunk support

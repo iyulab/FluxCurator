@@ -11,6 +11,10 @@ public enum PIIType
     /// </summary>
     None = 0,
 
+    // ========================================
+    // Global PII Types (language-agnostic)
+    // ========================================
+
     /// <summary>
     /// Email addresses.
     /// </summary>
@@ -22,76 +26,88 @@ public enum PIIType
     Phone = 1 << 1,
 
     /// <summary>
-    /// Korean Resident Registration Number (주민등록번호).
-    /// </summary>
-    KoreanRRN = 1 << 2,
-
-    /// <summary>
     /// Credit card numbers.
     /// </summary>
-    CreditCard = 1 << 3,
+    CreditCard = 1 << 2,
 
     /// <summary>
     /// Bank account numbers.
     /// </summary>
-    BankAccount = 1 << 4,
-
-    /// <summary>
-    /// Korean Business Registration Number (사업자등록번호).
-    /// </summary>
-    KoreanBRN = 1 << 5,
+    BankAccount = 1 << 3,
 
     /// <summary>
     /// Passport numbers.
     /// </summary>
-    Passport = 1 << 6,
+    Passport = 1 << 4,
 
     /// <summary>
     /// Driver's license numbers.
     /// </summary>
-    DriversLicense = 1 << 7,
+    DriversLicense = 1 << 5,
 
     /// <summary>
     /// IP addresses (IPv4 and IPv6).
     /// </summary>
-    IPAddress = 1 << 8,
+    IPAddress = 1 << 6,
 
     /// <summary>
     /// URLs and web addresses.
     /// </summary>
-    URL = 1 << 9,
+    URL = 1 << 7,
 
     /// <summary>
-    /// Person names (Korean and English).
+    /// Person names.
     /// </summary>
-    PersonName = 1 << 10,
+    PersonName = 1 << 8,
 
     /// <summary>
     /// Physical addresses.
     /// </summary>
-    Address = 1 << 11,
+    Address = 1 << 9,
+
+    // ========================================
+    // National ID Types (language-specific)
+    // ========================================
+
+    /// <summary>
+    /// National identification number (language-specific).
+    /// Examples: SSN (US), NINO (UK), RRN (KR), My Number (JP), etc.
+    /// Use with LanguageCodes in PIIMaskingOptions to specify target countries.
+    /// </summary>
+    NationalId = 1 << 10,
+
+    /// <summary>
+    /// Tax identification number (language-specific).
+    /// Examples: TIN (US), Steuer-ID (DE), BRN (KR), etc.
+    /// </summary>
+    TaxId = 1 << 11,
+
+    /// <summary>
+    /// Social security/insurance number (language-specific).
+    /// Examples: SSN (US), INSEE (FR), NINO (UK), etc.
+    /// </summary>
+    SocialSecurityNumber = 1 << 12,
 
     /// <summary>
     /// Custom/user-defined PII type.
     /// </summary>
     Custom = 1 << 30,
 
+    // ========================================
+    // Combination Types
+    // ========================================
+
     /// <summary>
     /// All built-in PII types.
     /// </summary>
-    All = Email | Phone | KoreanRRN | CreditCard | BankAccount |
-          KoreanBRN | Passport | DriversLicense | IPAddress | URL |
-          PersonName | Address,
+    All = Email | Phone | CreditCard | BankAccount | Passport |
+          DriversLicense | IPAddress | URL | PersonName | Address |
+          NationalId | TaxId | SocialSecurityNumber,
 
     /// <summary>
     /// Common PII types for general use.
     /// </summary>
-    Common = Email | Phone | KoreanRRN | CreditCard,
-
-    /// <summary>
-    /// Korean-specific PII types.
-    /// </summary>
-    Korean = KoreanRRN | KoreanBRN | Phone
+    Common = Email | Phone | NationalId | CreditCard
 }
 
 /// <summary>

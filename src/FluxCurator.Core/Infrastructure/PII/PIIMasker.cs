@@ -4,13 +4,16 @@ using System.Security.Cryptography;
 using System.Text;
 using FluxCurator.Core.Core;
 using FluxCurator.Core.Domain;
+using FluxCurator.Core.Infrastructure.PII.NationalId;
 
 /// <summary>
 /// Main PII masker that coordinates detection and masking operations.
+/// Supports multilingual PII detection through language codes.
 /// </summary>
 public sealed class PIIMasker : IPIIMasker
 {
     private readonly Dictionary<PIIType, IPIIDetector> _detectors = new();
+    private readonly INationalIdRegistry _nationalIdRegistry;
 
     /// <summary>
     /// Creates a new PIIMasker with default options.
@@ -22,9 +25,17 @@ public sealed class PIIMasker : IPIIMasker
     /// <summary>
     /// Creates a new PIIMasker with specified options.
     /// </summary>
-    public PIIMasker(PIIMaskingOptions options)
+    public PIIMasker(PIIMaskingOptions options) : this(options, new NationalIdRegistry())
+    {
+    }
+
+    /// <summary>
+    /// Creates a new PIIMasker with specified options and national ID registry.
+    /// </summary>
+    public PIIMasker(PIIMaskingOptions options, INationalIdRegistry nationalIdRegistry)
     {
         Options = options ?? throw new ArgumentNullException(nameof(options));
+        _nationalIdRegistry = nationalIdRegistry ?? throw new ArgumentNullException(nameof(nationalIdRegistry));
         RegisterDefaultDetectors();
     }
 
@@ -114,10 +125,41 @@ public sealed class PIIMasker : IPIIMasker
     /// </summary>
     private void RegisterDefaultDetectors()
     {
+        // Global detectors (language-agnostic)
         RegisterDetector(new EmailDetector());
         RegisterDetector(new PhoneDetector());
-        RegisterDetector(new KoreanRRNDetector());
         RegisterDetector(new CreditCardDetector());
+
+        // Register national ID detectors based on language codes
+        RegisterNationalIdDetectors();
+    }
+
+    /// <summary>
+    /// Registers national ID detectors based on configured language codes.
+    /// </summary>
+    private void RegisterNationalIdDetectors()
+    {
+        var languageCodes = Options.LanguageCodes;
+
+        // If "auto" is specified, register all available detectors
+        if (languageCodes.Contains("auto", StringComparer.OrdinalIgnoreCase))
+        {
+            foreach (var detector in _nationalIdRegistry.GetAllDetectors())
+            {
+                RegisterDetector(detector);
+            }
+            return;
+        }
+
+        // Register detectors for specified languages only
+        foreach (var languageCode in languageCodes)
+        {
+            var detectors = _nationalIdRegistry.GetDetectors([languageCode]);
+            foreach (var detector in detectors)
+            {
+                RegisterDetector(detector);
+            }
+        }
     }
 
     /// <summary>
@@ -263,14 +305,15 @@ public sealed class PIIMasker : IPIIMasker
                 }
                 break;
 
-            case PIIType.KoreanRRN:
-                // Show first 6 digits (birthdate): 901231-*******
+            case PIIType.NationalId:
+                // Show first 6 characters for national IDs: 901231-*******
                 if (value.Length >= 7)
                 {
                     var normalized = value.Replace("-", "").Replace(" ", "");
-                    if (normalized.Length >= 13)
+                    if (normalized.Length >= 6)
                     {
-                        return normalized[..6] + "-*******";
+                        var maskLength = Math.Max(normalized.Length - 6, 0);
+                        return normalized[..6] + new string('*', maskLength);
                     }
                 }
                 break;
