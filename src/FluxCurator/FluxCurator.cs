@@ -1,16 +1,18 @@
 namespace FluxCurator;
 
+using global::FluxCurator.Core;
 using global::FluxCurator.Core.Core;
 using global::FluxCurator.Core.Domain;
 using global::FluxCurator.Core.Infrastructure.Chunking;
 using global::FluxCurator.Core.Infrastructure.Filtering;
 using global::FluxCurator.Core.Infrastructure.Languages;
 using global::FluxCurator.Core.Infrastructure.PII;
+using global::FluxCurator.Core.Infrastructure.Refining;
 using global::FluxCurator.Infrastructure.Chunking;
 
 /// <summary>
 /// Main entry point for FluxCurator text preprocessing operations.
-/// Provides fluent API for text chunking, PII masking, and content filtering.
+/// Provides fluent API for text chunking, PII masking, content filtering, and text refinement.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,26 +20,30 @@ using global::FluxCurator.Infrastructure.Chunking;
 /// Semantic chunking features require an optional IEmbedder implementation.
 /// </para>
 /// <example>
-/// Basic usage:
+/// Basic usage with fluent builder:
 /// <code>
-/// var curator = new FluxCurator()
-///     .WithChunkingOptions(ChunkOptions.ForKorean);
+/// var curator = FluxCurator.Create()
+///     .WithTextRefinement(TextRefineOptions.ForKorean)
+///     .WithPIIMasking()
+///     .WithChunkingOptions(ChunkOptions.ForKorean)
+///     .Build();
 ///
-/// var chunks = await curator.ChunkAsync(text);
+/// var result = await curator.PreprocessAsync(text);
 /// </code>
 /// </example>
 /// <example>
 /// With semantic chunking:
 /// <code>
-/// var curator = new FluxCurator()
+/// var curator = FluxCurator.Create()
 ///     .UseEmbedder(myEmbedder)
-///     .WithChunkingOptions(opt => opt.Strategy = ChunkingStrategy.Semantic);
+///     .WithChunkingOptions(opt => opt.Strategy = ChunkingStrategy.Semantic)
+///     .Build();
 ///
 /// var chunks = await curator.ChunkAsync(text);
 /// </code>
 /// </example>
 /// </remarks>
-public sealed class FluxCurator
+public sealed class FluxCurator : IFluxCurator
 {
     private IEmbedder? _embedder;
     private ChunkOptions _chunkOptions = ChunkOptions.Default;
@@ -45,10 +51,12 @@ public sealed class FluxCurator
     private ContentFilterOptions _filterOptions = ContentFilterOptions.Default;
     private IPIIMasker? _piiMasker;
     private IContentFilterManager? _filterManager;
+    private TextRefineOptions? _refineOptions;
+    private readonly ITextRefiner _refiner = TextRefiner.Instance;
     private readonly Dictionary<ChunkingStrategy, IChunker> _chunkers = new();
 
     /// <summary>
-    /// Creates a new FluxCurator instance.
+    /// Creates a new FluxCurator instance with default configuration.
     /// </summary>
     public FluxCurator()
     {
@@ -56,37 +64,51 @@ public sealed class FluxCurator
         RegisterChunker(ChunkingStrategy.Sentence, new SentenceChunker());
         RegisterChunker(ChunkingStrategy.Paragraph, new ParagraphChunker());
         RegisterChunker(ChunkingStrategy.Token, new TokenChunker());
+        RegisterChunker(ChunkingStrategy.Hierarchical, new HierarchicalChunker());
     }
 
     /// <summary>
-    /// Gets whether an embedder is configured for semantic operations.
+    /// Creates a new FluxCurator builder for fluent configuration.
     /// </summary>
+    /// <returns>A new FluxCurator instance for configuration.</returns>
+    public static FluxCurator Create() => new();
+
+    /// <summary>
+    /// Finalizes the configuration and returns this instance.
+    /// This method is optional but completes the fluent builder pattern.
+    /// </summary>
+    /// <returns>This configured instance.</returns>
+    public FluxCurator Build() => this;
+
+    #region Properties
+
+    /// <inheritdoc />
     public bool HasEmbedder => _embedder is not null;
 
-    /// <summary>
-    /// Gets whether PII masking is enabled.
-    /// </summary>
+    /// <inheritdoc />
     public bool HasPIIMasking => _piiMasker is not null;
 
-    /// <summary>
-    /// Gets whether content filtering is enabled.
-    /// </summary>
+    /// <inheritdoc />
     public bool HasContentFiltering => _filterManager is not null;
 
-    /// <summary>
-    /// Gets the current chunking options.
-    /// </summary>
+    /// <inheritdoc />
+    public bool HasTextRefinement => _refineOptions is not null;
+
+    /// <inheritdoc />
     public ChunkOptions ChunkingOptions => _chunkOptions;
 
-    /// <summary>
-    /// Gets the current PII masking options.
-    /// </summary>
+    /// <inheritdoc />
     public PIIMaskingOptions PIIMaskingOptions => _piiOptions;
 
-    /// <summary>
-    /// Gets the current content filtering options.
-    /// </summary>
+    /// <inheritdoc />
     public ContentFilterOptions ContentFilterOptions => _filterOptions;
+
+    /// <inheritdoc />
+    public TextRefineOptions? TextRefineOptions => _refineOptions;
+
+    #endregion
+
+    #region Fluent Configuration
 
     /// <summary>
     /// Configures an embedder for semantic chunking capabilities.
@@ -97,10 +119,42 @@ public sealed class FluxCurator
     public FluxCurator UseEmbedder(IEmbedder embedder)
     {
         _embedder = embedder ?? throw new ArgumentNullException(nameof(embedder));
-
-        // Automatically register semantic chunker when embedder is provided
         RegisterChunker(ChunkingStrategy.Semantic, new SemanticChunker(embedder));
+        return this;
+    }
 
+    /// <summary>
+    /// Enables text refinement with default (Light) options.
+    /// Text refinement cleans and normalizes raw text before further processing.
+    /// </summary>
+    /// <returns>This instance for fluent chaining.</returns>
+    public FluxCurator WithTextRefinement()
+    {
+        _refineOptions = global::FluxCurator.Core.Domain.TextRefineOptions.Light;
+        return this;
+    }
+
+    /// <summary>
+    /// Enables text refinement with the specified options.
+    /// </summary>
+    /// <param name="options">The text refinement options.</param>
+    /// <returns>This instance for fluent chaining.</returns>
+    public FluxCurator WithTextRefinement(TextRefineOptions options)
+    {
+        _refineOptions = options ?? throw new ArgumentNullException(nameof(options));
+        return this;
+    }
+
+    /// <summary>
+    /// Enables text refinement using a builder action.
+    /// </summary>
+    /// <param name="configure">Action to configure options.</param>
+    /// <returns>This instance for fluent chaining.</returns>
+    public FluxCurator WithTextRefinement(Action<TextRefineOptions> configure)
+    {
+        ArgumentNullException.ThrowIfNull(configure);
+        _refineOptions = new TextRefineOptions();
+        configure(_refineOptions);
         return this;
     }
 
@@ -210,12 +264,11 @@ public sealed class FluxCurator
         return this;
     }
 
-    /// <summary>
-    /// Chunks the given text according to the configured options.
-    /// </summary>
-    /// <param name="text">The text to chunk.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A list of document chunks.</returns>
+    #endregion
+
+    #region Chunking Operations
+
+    /// <inheritdoc />
     public Task<IReadOnlyList<DocumentChunk>> ChunkAsync(
         string text,
         CancellationToken cancellationToken = default)
@@ -223,13 +276,7 @@ public sealed class FluxCurator
         return ChunkAsync(text, _chunkOptions, cancellationToken);
     }
 
-    /// <summary>
-    /// Chunks the given text with custom options.
-    /// </summary>
-    /// <param name="text">The text to chunk.</param>
-    /// <param name="options">Custom chunking options.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A list of document chunks.</returns>
+    /// <inheritdoc />
     public async Task<IReadOnlyList<DocumentChunk>> ChunkAsync(
         string text,
         ChunkOptions options,
@@ -241,7 +288,6 @@ public sealed class FluxCurator
         var strategy = ResolveStrategy(text, options);
         var chunker = GetChunker(strategy);
 
-        // Validate semantic chunking requirements
         if (chunker.RequiresEmbedder && _embedder is null)
         {
             throw new InvalidOperationException(
@@ -252,22 +298,13 @@ public sealed class FluxCurator
         return await chunker.ChunkAsync(text, options, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Estimates the number of chunks for the given text.
-    /// </summary>
-    /// <param name="text">The text to estimate.</param>
-    /// <returns>Estimated chunk count.</returns>
+    /// <inheritdoc />
     public int EstimateChunkCount(string text)
     {
         return EstimateChunkCount(text, _chunkOptions);
     }
 
-    /// <summary>
-    /// Estimates the number of chunks for the given text with custom options.
-    /// </summary>
-    /// <param name="text">The text to estimate.</param>
-    /// <param name="options">Custom chunking options.</param>
-    /// <returns>Estimated chunk count.</returns>
+    /// <inheritdoc />
     public int EstimateChunkCount(string text, ChunkOptions options)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -278,83 +315,78 @@ public sealed class FluxCurator
         return chunker.EstimateChunkCount(text, options);
     }
 
-    /// <summary>
-    /// Detects the language of the given text.
-    /// </summary>
-    /// <param name="text">The text to analyze.</param>
-    /// <returns>ISO 639-1 language code.</returns>
+    /// <inheritdoc />
     public string DetectLanguage(string text)
     {
         return LanguageProfileRegistry.Instance.DetectLanguage(text);
     }
 
-    /// <summary>
-    /// Masks PII in the given text.
-    /// </summary>
-    /// <param name="text">The text to mask.</param>
-    /// <returns>The masking result with masked text and detection details.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when PII masking is not enabled.</exception>
+    #endregion
+
+    #region Text Refinement Operations
+
+    /// <inheritdoc />
+    public string RefineText(string text)
+    {
+        var options = _refineOptions ?? global::FluxCurator.Core.Domain.TextRefineOptions.Light;
+        return _refiner.Refine(text, options);
+    }
+
+    /// <inheritdoc />
+    public string RefineText(string text, TextRefineOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        return _refiner.Refine(text, options);
+    }
+
+    #endregion
+
+    #region PII Operations
+
+    /// <inheritdoc />
     public PIIMaskingResult MaskPII(string text)
     {
         EnsurePIIMaskerConfigured();
         return _piiMasker!.Mask(text);
     }
 
-    /// <summary>
-    /// Detects PII in the given text without masking.
-    /// </summary>
-    /// <param name="text">The text to scan.</param>
-    /// <returns>A list of detected PII matches.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when PII masking is not enabled.</exception>
+    /// <inheritdoc />
     public IReadOnlyList<PIIMatch> DetectPII(string text)
     {
         EnsurePIIMaskerConfigured();
         return _piiMasker!.Detect(text);
     }
 
-    /// <summary>
-    /// Checks if the text contains any PII.
-    /// </summary>
-    /// <param name="text">The text to check.</param>
-    /// <returns>True if PII is found.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when PII masking is not enabled.</exception>
+    /// <inheritdoc />
     public bool ContainsPII(string text)
     {
         EnsurePIIMaskerConfigured();
         return _piiMasker!.ContainsPII(text);
     }
 
-    /// <summary>
-    /// Filters content in the given text.
-    /// </summary>
-    /// <param name="text">The text to filter.</param>
-    /// <returns>The filtering result with filtered text and detection details.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when content filtering is not enabled.</exception>
+    #endregion
+
+    #region Content Filtering Operations
+
+    /// <inheritdoc />
     public ContentFilterResult FilterContent(string text)
     {
         EnsureFilterManagerConfigured();
         return _filterManager!.Filter(text);
     }
 
-    /// <summary>
-    /// Checks if the text contains any filtered content.
-    /// </summary>
-    /// <param name="text">The text to check.</param>
-    /// <returns>True if filtered content is found.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when content filtering is not enabled.</exception>
+    /// <inheritdoc />
     public bool ContainsFilteredContent(string text)
     {
         EnsureFilterManagerConfigured();
         return _filterManager!.ContainsFilteredContent(text);
     }
 
-    /// <summary>
-    /// Preprocesses text by filtering content, masking PII, and then chunking.
-    /// Combines all preprocessing steps in a single pipeline operation.
-    /// </summary>
-    /// <param name="text">The text to preprocess.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A preprocessing result with processed chunks.</returns>
+    #endregion
+
+    #region Pipeline Operations
+
+    /// <inheritdoc />
     public async Task<PreprocessingResult> PreprocessAsync(
         string text,
         CancellationToken cancellationToken = default)
@@ -362,6 +394,14 @@ public sealed class FluxCurator
         var processedText = text;
         ContentFilterResult? filterResult = null;
         PIIMaskingResult? maskingResult = null;
+        string? refinedText = null;
+
+        // Step 0: Apply text refinement if configured
+        if (_refineOptions is not null)
+        {
+            processedText = _refiner.Refine(processedText, _refineOptions);
+            refinedText = processedText;
+        }
 
         // Step 1: Apply content filtering if configured
         if (_filterManager is not null)
@@ -375,7 +415,8 @@ public sealed class FluxCurator
                     ProcessedText = string.Empty,
                     Chunks = [],
                     PIIMaskingResult = null,
-                    ContentFilterResult = filterResult
+                    ContentFilterResult = filterResult,
+                    RefinedText = refinedText
                 };
             }
             processedText = filterResult.FilteredText;
@@ -397,22 +438,24 @@ public sealed class FluxCurator
             ProcessedText = processedText,
             Chunks = chunks,
             PIIMaskingResult = maskingResult,
-            ContentFilterResult = filterResult
+            ContentFilterResult = filterResult,
+            RefinedText = refinedText
         };
     }
 
     /// <summary>
-    /// Creates a builder for batch processing multiple texts.
+    /// Creates a batch processor for processing multiple texts efficiently.
     /// </summary>
-    /// <returns>A batch processor builder.</returns>
+    /// <returns>A new batch processor instance.</returns>
     public BatchProcessor CreateBatchProcessor()
     {
         return new BatchProcessor(this);
     }
 
-    /// <summary>
-    /// Ensures PII masker is configured.
-    /// </summary>
+    #endregion
+
+    #region Private Helpers
+
     private void EnsurePIIMaskerConfigured()
     {
         if (_piiMasker is null)
@@ -422,9 +465,6 @@ public sealed class FluxCurator
         }
     }
 
-    /// <summary>
-    /// Ensures content filter manager is configured.
-    /// </summary>
     private void EnsureFilterManagerConfigured()
     {
         if (_filterManager is null)
@@ -434,15 +474,11 @@ public sealed class FluxCurator
         }
     }
 
-    /// <summary>
-    /// Resolves the actual chunking strategy to use.
-    /// </summary>
     private ChunkingStrategy ResolveStrategy(string text, ChunkOptions options)
     {
         if (options.Strategy != ChunkingStrategy.Auto)
             return options.Strategy;
 
-        // Auto-select strategy based on content analysis
         var profile = LanguageProfileRegistry.Instance.DetectProfile(text);
         var tokenCount = profile.EstimateTokenCount(text);
 
@@ -453,26 +489,17 @@ public sealed class FluxCurator
         // Check paragraph structure
         var paragraphs = profile.FindParagraphBoundaries(text);
         if (paragraphs.Count > 3)
-        {
-            // Document has clear paragraph structure
             return ChunkingStrategy.Paragraph;
-        }
 
         // Check sentence structure
         var sentences = profile.FindSentenceBoundaries(text);
         if (sentences.Count > 5)
-        {
-            // Text has clear sentence structure
             return ChunkingStrategy.Sentence;
-        }
 
         // Default to token chunking for unstructured text
         return ChunkingStrategy.Token;
     }
 
-    /// <summary>
-    /// Gets the chunker for the specified strategy.
-    /// </summary>
     private IChunker GetChunker(ChunkingStrategy strategy)
     {
         if (_chunkers.TryGetValue(strategy, out var chunker))
@@ -481,83 +508,6 @@ public sealed class FluxCurator
         // Fallback to token chunker
         return _chunkers[ChunkingStrategy.Token];
     }
-}
 
-/// <summary>
-/// Batch processor for chunking multiple texts efficiently.
-/// </summary>
-public sealed class BatchProcessor
-{
-    private readonly FluxCurator _curator;
-    private readonly List<string> _texts = [];
-    private int _maxConcurrency = Environment.ProcessorCount;
-
-    internal BatchProcessor(FluxCurator curator)
-    {
-        _curator = curator;
-    }
-
-    /// <summary>
-    /// Adds a text to the batch.
-    /// </summary>
-    public BatchProcessor AddText(string text)
-    {
-        if (!string.IsNullOrWhiteSpace(text))
-            _texts.Add(text);
-        return this;
-    }
-
-    /// <summary>
-    /// Adds multiple texts to the batch.
-    /// </summary>
-    public BatchProcessor AddTexts(IEnumerable<string> texts)
-    {
-        foreach (var text in texts)
-            AddText(text);
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the maximum concurrency for parallel processing.
-    /// </summary>
-    public BatchProcessor WithMaxConcurrency(int maxConcurrency)
-    {
-        _maxConcurrency = Math.Max(1, Math.Min(maxConcurrency, 32));
-        return this;
-    }
-
-    /// <summary>
-    /// Processes all texts in the batch.
-    /// </summary>
-    public async Task<IReadOnlyList<IReadOnlyList<DocumentChunk>>> ProcessAsync(
-        CancellationToken cancellationToken = default)
-    {
-        if (_texts.Count == 0)
-            return [];
-
-        var semaphore = new SemaphoreSlim(_maxConcurrency);
-        var tasks = _texts.Select(async text =>
-        {
-            await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                return await _curator.ChunkAsync(text, cancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        });
-
-        var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-        return results;
-    }
-
-    /// <summary>
-    /// Gets the total estimated chunk count for all texts.
-    /// </summary>
-    public int GetTotalEstimatedChunks()
-    {
-        return _texts.Sum(t => _curator.EstimateChunkCount(t));
-    }
+    #endregion
 }

@@ -14,6 +14,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 
 ## Features
 
+- **Text Refinement** - Clean noisy text by removing blank lines, duplicates, empty list markers, and custom patterns
 - **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs, credit cards across 10+ languages
 - **Content Filtering** - Filter harmful content with customizable rules and blocklists
 - **Smart Chunking** - Rule-based chunking (sentence, paragraph, token)
@@ -101,6 +102,34 @@ public class MyService
 }
 ```
 
+### Text Refinement
+
+```csharp
+// Clean noisy text before processing
+var curator = new FluxCurator()
+    .WithTextRefinement(TextRefineOptions.Standard);
+
+var result = await curator.PreprocessAsync(rawText);
+// Pipeline: Refine → Filter → Mask → Chunk
+
+// Use presets for specific content types
+TextRefineOptions.Light        // Minimal: empty list markers, trim, collapse blanks
+TextRefineOptions.Standard     // Default: + remove duplicates
+TextRefineOptions.ForWebContent  // Web-optimized: aggressive cleaning
+TextRefineOptions.ForKorean    // Korean: removes 댓글 sections, copyright
+TextRefineOptions.ForPdfContent  // PDF: removes page numbers
+
+// Custom patterns
+var options = new TextRefineOptions
+{
+    RemoveBlankLines = true,
+    RemoveDuplicateLines = true,
+    RemoveEmptyListItems = true,  // Supports Korean markers: ㅇ, ○, ●, □, ■
+    TrimLines = true,
+    RemovePatterns = [@"^#\s*댓글\s*$", @"^\[광고\].*$"]
+};
+```
+
 ### PII Masking
 
 ```csharp
@@ -166,11 +195,12 @@ foreach (var chunk in chunks)
 ```csharp
 // Complete preprocessing pipeline
 var curator = new FluxCurator()
+    .WithTextRefinement(TextRefineOptions.Standard)
     .WithContentFiltering()
     .WithPIIMasking(PIIMaskingOptions.ForLanguages("en", "ko", "ja"))
     .WithChunkingOptions(ChunkOptions.ForRAG);
 
-// Process: Filter → Mask PII → Chunk
+// Process: Refine → Filter → Mask PII → Chunk
 var result = await curator.PreprocessAsync(text);
 
 Console.WriteLine(result.GetSummary());
@@ -524,6 +554,7 @@ FluxCurator/
 - [x] Hierarchical chunking
 - [x] Dependency Injection support
 - [x] FileFlux integration
+- [x] Text refinement with Korean support
 - [ ] Additional national ID detectors (India, Canada, Australia)
 - [ ] Additional language profiles (Vietnamese, Thai)
 - [ ] Custom detector registration

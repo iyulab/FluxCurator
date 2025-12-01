@@ -31,6 +31,17 @@ public sealed class PreprocessingResult
     public ContentFilterResult? ContentFilterResult { get; init; }
 
     /// <summary>
+    /// Gets or sets the refined text (null if text refinement was not applied).
+    /// This is the text after noise removal and normalization, before PII masking.
+    /// </summary>
+    public string? RefinedText { get; init; }
+
+    /// <summary>
+    /// Gets whether text refinement was applied.
+    /// </summary>
+    public bool HasRefinedText => RefinedText is not null;
+
+    /// <summary>
     /// Gets whether PII was detected and masked.
     /// </summary>
     public bool HasMaskedPII => PIIMaskingResult?.HasPII ?? false;
@@ -79,6 +90,11 @@ public sealed class PreprocessingResult
         {
             $"Produced {ChunkCount} chunk(s)"
         };
+
+        if (HasRefinedText)
+        {
+            parts.Add("Text refined");
+        }
 
         if (ContentFilterResult is not null)
         {
