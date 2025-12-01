@@ -310,7 +310,16 @@ public sealed class FluxCurator : IFluxCurator
                 "Call UseEmbedder() first or choose a different strategy.");
         }
 
-        return await chunker.ChunkAsync(text, options, cancellationToken).ConfigureAwait(false);
+        var chunks = await chunker.ChunkAsync(text, options, cancellationToken).ConfigureAwait(false);
+
+        // Apply chunk balancing if enabled
+        if (options.EnableChunkBalancing && chunks.Count > 1)
+        {
+            chunks = await ChunkBalancer.Instance.BalanceAsync(chunks, options, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return chunks;
     }
 
     /// <inheritdoc />
@@ -366,10 +375,17 @@ public sealed class FluxCurator : IFluxCurator
                 "Call UseEmbedder() first or choose a different strategy.");
         }
 
-        // Get all chunks and yield them one by one for streaming support
-        // This allows consumers to process chunks as they become available
+        // Get all chunks
         var chunks = await chunker.ChunkAsync(text, options, cancellationToken).ConfigureAwait(false);
 
+        // Apply chunk balancing if enabled (requires buffering all chunks)
+        if (options.EnableChunkBalancing && chunks.Count > 1)
+        {
+            chunks = await ChunkBalancer.Instance.BalanceAsync(chunks, options, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        // Yield chunks one by one for streaming support
         foreach (var chunk in chunks)
         {
             cancellationToken.ThrowIfCancellationRequested();

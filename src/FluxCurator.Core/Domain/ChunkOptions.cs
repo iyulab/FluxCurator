@@ -90,6 +90,13 @@ public sealed class ChunkOptions
     public bool NormalizeWhitespace { get; set; } = false;
 
     /// <summary>
+    /// Gets or sets whether to enable automatic post-processing to balance chunk sizes.
+    /// When enabled, undersized chunks are merged and oversized chunks are split.
+    /// Default: true.
+    /// </summary>
+    public bool EnableChunkBalancing { get; set; } = true;
+
+    /// <summary>
     /// Creates default chunking options.
     /// </summary>
     public static ChunkOptions Default => new();
@@ -106,7 +113,8 @@ public sealed class ChunkOptions
         OverlapSize = 64,
         PreserveSentences = true,
         PreserveParagraphs = true,
-        IncludeMetadata = true
+        IncludeMetadata = true,
+        EnableChunkBalancing = true
     };
 
     /// <summary>
@@ -121,7 +129,8 @@ public sealed class ChunkOptions
         OverlapSize = 40,
         LanguageCode = "ko",
         PreserveSentences = true,
-        PreserveParagraphs = true
+        PreserveParagraphs = true,
+        EnableChunkBalancing = true
     };
 
     /// <summary>
