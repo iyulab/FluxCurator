@@ -217,6 +217,21 @@ public sealed class FluxCurator : IFluxCurator
     }
 
     /// <summary>
+    /// Registers a custom PII detector.
+    /// PII masking must be enabled first via WithPIIMasking().
+    /// </summary>
+    /// <param name="detector">The custom detector to register.</param>
+    /// <returns>This instance for fluent chaining.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when PII masking is not enabled.</exception>
+    public FluxCurator RegisterPIIDetector(IPIIDetector detector)
+    {
+        ArgumentNullException.ThrowIfNull(detector);
+        EnsurePIIMaskerConfigured();
+        _piiMasker!.RegisterDetector(detector);
+        return this;
+    }
+
+    /// <summary>
     /// Enables content filtering with default options.
     /// </summary>
     /// <returns>This instance for fluent chaining.</returns>
@@ -319,6 +334,47 @@ public sealed class FluxCurator : IFluxCurator
     public string DetectLanguage(string text)
     {
         return LanguageProfileRegistry.Instance.DetectLanguage(text);
+    }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<DocumentChunk> ChunkStreamAsync(
+        string text,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await foreach (var chunk in ChunkStreamAsync(text, _chunkOptions, cancellationToken).ConfigureAwait(false))
+        {
+            yield return chunk;
+        }
+    }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<DocumentChunk> ChunkStreamAsync(
+        string text,
+        ChunkOptions options,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            yield break;
+
+        var strategy = ResolveStrategy(text, options);
+        var chunker = GetChunker(strategy);
+
+        if (chunker.RequiresEmbedder && _embedder is null)
+        {
+            throw new InvalidOperationException(
+                $"Strategy '{chunker.StrategyName}' requires an embedder. " +
+                "Call UseEmbedder() first or choose a different strategy.");
+        }
+
+        // Get all chunks and yield them one by one for streaming support
+        // This allows consumers to process chunks as they become available
+        var chunks = await chunker.ChunkAsync(text, options, cancellationToken).ConfigureAwait(false);
+
+        foreach (var chunk in chunks)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return chunk;
+        }
     }
 
     #endregion

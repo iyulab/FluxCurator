@@ -8,20 +8,21 @@ Clean, protect, and chunk your text for RAG pipelines — no dependencies requir
 
 ## Overview
 
-FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 10+ languages.
+FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 14 languages and 13 countries' national IDs.
 
 **Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds optional LocalEmbedder integration for semantic chunking.
 
 ## Features
 
 - **Text Refinement** - Clean noisy text by removing blank lines, duplicates, empty list markers, and custom patterns
-- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs, credit cards across 10+ languages
+- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs, credit cards across 14 languages
 - **Content Filtering** - Filter harmful content with customizable rules and blocklists
 - **Smart Chunking** - Rule-based chunking (sentence, paragraph, token)
 - **Semantic Chunking** - Embedding-based chunking for semantic boundaries
 - **Hierarchical Chunking** - Document structure-aware chunking with parent-child relationships
-- **Multi-Language Support** - 11 languages including Korean, English, Japanese, Chinese
-- **National ID Validation** - Checksum validation for SSN (US), RRN (Korea), NINO (UK), CPF (Brazil), and more
+- **Multi-Language Support** - 14 languages including Korean, English, Japanese, Chinese, Vietnamese, Thai
+- **National ID Validation** - Checksum validation for 13 countries including SSN (US), RRN (Korea), Aadhaar (India), SIN (Canada)
+- **Streaming Support** - Memory-efficient streaming chunk generation via `ChunkStreamAsync`
 - **Pipeline Processing** - Combine filtering, masking, and chunking in one call
 - **Dependency Injection** - Full DI support with `IServiceCollection` extensions
 - **FileFlux Integration** - Seamless integration with FileFlux document processing
@@ -55,6 +56,20 @@ foreach (var chunk in chunks)
     Console.WriteLine($"Chunk {chunk.Index + 1}/{chunk.TotalChunks}:");
     Console.WriteLine(chunk.Content);
     Console.WriteLine($"Tokens: ~{chunk.Metadata.EstimatedTokenCount}");
+}
+```
+
+### Streaming Chunks
+
+```csharp
+// Memory-efficient streaming for large texts
+var curator = new FluxCurator();
+
+await foreach (var chunk in curator.ChunkStreamAsync(largeText))
+{
+    // Process chunks as they are generated
+    Console.WriteLine($"Chunk {chunk.Index}: {chunk.Content.Length} chars");
+    await ProcessChunkAsync(chunk);
 }
 ```
 
@@ -251,6 +266,9 @@ FluxCurator includes language profiles for accurate sentence detection and token
 | Portuguese | `pt` | Portuguese punctuation |
 | Russian | `ru` | Cyrillic support |
 | Arabic | `ar` | RTL and Arabic punctuation |
+| Hindi | `hi` | Devanagari script support |
+| Vietnamese | `vi` | Latin with Vietnamese diacritics |
+| Thai | `th` | Thai script (no word spaces) |
 
 ## PII Types Supported
 
@@ -279,6 +297,9 @@ FluxCurator includes language profiles for accurate sentence detection and token
 | Spain | `es` | DNI / NIE | Check letter validation |
 | Brazil | `pt-BR` | CPF | Dual Modulo-11 |
 | Italy | `it` | Codice Fiscale | Check character validation |
+| India | `hi` | Aadhaar | Verhoeff checksum |
+| Canada | `en-CA` | Social Insurance Number (SIN) | Luhn algorithm |
+| Australia | `en-AU` | Tax File Number (TFN) | Weighted sum mod 11 |
 
 ## Configuration Options
 
@@ -343,11 +364,19 @@ public class EmployeeIdDetector : PIIDetectorBase
     }
 }
 
-// Register and use
+// Register and use via PIIMasker
 var masker = new PIIMasker(PIIMaskingOptions.Default);
 masker.RegisterDetector(new EmployeeIdDetector());
 
 var result = masker.Mask("Contact employee EMP-123456 for details.");
+// Output: "Contact employee [PII] for details."
+
+// Or register directly via FluxCurator
+var curator = new FluxCurator()
+    .WithPIIMasking()
+    .RegisterPIIDetector(new EmployeeIdDetector());
+
+var curatorResult = curator.MaskPII("Contact employee EMP-123456 for details.");
 // Output: "Contact employee [PII] for details."
 ```
 
@@ -555,10 +584,10 @@ FluxCurator/
 - [x] Dependency Injection support
 - [x] FileFlux integration
 - [x] Text refinement with Korean support
-- [ ] Additional national ID detectors (India, Canada, Australia)
-- [ ] Additional language profiles (Vietnamese, Thai)
-- [ ] Custom detector registration
-- [ ] Streaming chunk support
+- [x] Additional national ID detectors (India Aadhaar, Canada SIN, Australia TFN)
+- [x] Additional language profiles (Vietnamese, Thai)
+- [x] Custom detector registration via `RegisterPIIDetector`
+- [x] Streaming chunk support via `ChunkStreamAsync`
 
 ## Contributing
 

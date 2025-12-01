@@ -134,6 +134,15 @@ public sealed class NationalIdRegistry : INationalIdRegistry
 
         // Italy Codice Fiscale
         Register(new ItalyCodiceFiscaleDetector());
+
+        // India Aadhaar
+        Register(new IndiaAadhaarDetector());
+
+        // Canada SIN
+        Register(new CanadaSINDetector());
+
+        // Australia TFN
+        Register(new AustraliaTFNDetector());
     }
 
     /// <summary>

@@ -32,6 +32,8 @@ public sealed class LanguageProfileRegistry
         Register(new HindiLanguageProfile());
         Register(new PortugueseLanguageProfile());
         Register(new RussianLanguageProfile());
+        Register(new VietnameseLanguageProfile());
+        Register(new ThaiLanguageProfile());
     }
 
     /// <summary>
@@ -87,6 +89,8 @@ public sealed class LanguageProfileRegistry
         int cyrillicChars = 0;
         int arabicChars = 0;
         int devanagariChars = 0;
+        int thaiChars = 0;
+        int vietnameseDiacritics = 0;
         int totalChars = 0;
 
         foreach (char c in text)
@@ -108,8 +112,14 @@ public sealed class LanguageProfileRegistry
                 arabicChars++;
             else if (IsDevanagari(c))
                 devanagariChars++;
+            else if (IsThai(c))
+                thaiChars++;
             else if (IsLatin(c))
+            {
                 latinChars++;
+                if (IsVietnameseDiacritic(c))
+                    vietnameseDiacritics++;
+            }
         }
 
         if (totalChars == 0)
@@ -122,6 +132,7 @@ public sealed class LanguageProfileRegistry
         float cyrillicRatio = (float)cyrillicChars / totalChars;
         float arabicRatio = (float)arabicChars / totalChars;
         float devanagariRatio = (float)devanagariChars / totalChars;
+        float thaiRatio = (float)thaiChars / totalChars;
 
         // Korean threshold: if more than 30% Korean characters
         if (koreanRatio > 0.3f)
@@ -146,6 +157,15 @@ public sealed class LanguageProfileRegistry
         // Devanagari threshold (Hindi)
         if (devanagariRatio > 0.3f)
             return "hi";
+
+        // Thai threshold
+        if (thaiRatio > 0.3f)
+            return "th";
+
+        // Vietnamese detection: Latin script with many Vietnamese-specific diacritics
+        // If more than 5% of Latin chars have Vietnamese diacritics, likely Vietnamese
+        if (latinChars > 0 && (float)vietnameseDiacritics / latinChars > 0.05f)
+            return "vi";
 
         // Default to English for Latin-based text
         // Note: Detecting specific Latin-based languages (Spanish, French, German, Portuguese)
@@ -185,4 +205,20 @@ public sealed class LanguageProfileRegistry
 
     private static bool IsDevanagari(char c) =>
         (c >= '\u0900' && c <= '\u097F');    // Devanagari
+
+    private static bool IsThai(char c) =>
+        (c >= '\u0E00' && c <= '\u0E7F');    // Thai
+
+    private static bool IsVietnameseDiacritic(char c) =>
+        // Vietnamese-specific characters with diacritics
+        // These are unique to Vietnamese and help identify the language
+        c == 'ă' || c == 'Ă' ||  // a-breve
+        c == 'â' || c == 'Â' ||  // a-circumflex
+        c == 'đ' || c == 'Đ' ||  // d-stroke (unique to Vietnamese)
+        c == 'ê' || c == 'Ê' ||  // e-circumflex
+        c == 'ô' || c == 'Ô' ||  // o-circumflex
+        c == 'ơ' || c == 'Ơ' ||  // o-horn (unique to Vietnamese)
+        c == 'ư' || c == 'Ư' ||  // u-horn (unique to Vietnamese)
+        // Vowels with tone marks
+        (c >= '\u1EA0' && c <= '\u1EF9');  // Vietnamese Extended Latin
 }

@@ -377,6 +377,105 @@ public sealed class PortugueseLanguageProfile : LanguageProfileBase
 }
 
 /// <summary>
+/// Language profile for Vietnamese text processing.
+/// Vietnamese uses Latin script with many diacritical marks (tonal and modification marks).
+/// White spaces separate syllables, not necessarily words.
+/// </summary>
+public sealed class VietnameseLanguageProfile : LanguageProfileBase
+{
+    private static readonly HashSet<string> VietnameseAbbreviations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Common Vietnamese abbreviations
+        "TP.", "Q.", "P.", "TX.", "TT.",  // Geographic: City, District, Ward, Town, Center
+        "Ths.", "TS.", "PGS.", "GS.",     // Academic: Master, Doctor, Associate Prof, Professor
+        "ông", "bà", "anh", "chị",        // Titles
+        "v.v.", "vv.",                     // etc.
+        "tr.", "NXB."                      // Page, Publisher
+    };
+
+    /// <inheritdoc/>
+    public override string LanguageCode => "vi";
+
+    /// <inheritdoc/>
+    public override string LanguageName => "Vietnamese";
+
+    /// <inheritdoc/>
+    public override string SentenceEndPattern =>
+        // Vietnamese uses standard punctuation for sentence endings
+        @"[.!?]+(?:\s|$)|[.!?]+(?=[""'\)\]}>])";
+
+    /// <inheritdoc/>
+    public override string SectionMarkerPattern =>
+        @"^[\s]*(?:" +
+            // Markdown headers
+            @"#{1,6}\s+|" +
+            // Vietnamese chapter markers: Chương I, Phần 1, Mục 2
+            @"(?:Chương|Phần|Mục|Bài|Điều)\s+[\dIVXLCDM]+[.:]?\s*|" +
+            // Numbered sections
+            @"\d+[\.\)]\s+|" +
+            // Letter sections
+            @"[a-zA-Z][\.\)]\s+|" +
+            // Bullet points
+            @"[\-\*•]\s+" +
+        @")";
+
+    /// <inheritdoc/>
+    public override IReadOnlySet<string> Abbreviations => VietnameseAbbreviations;
+
+    /// <summary>
+    /// Vietnamese text has approximately 4 characters per token (syllable-based).
+    /// </summary>
+    protected override float CharsPerToken => 4.0f;
+}
+
+/// <summary>
+/// Language profile for Thai text processing.
+/// Thai script does not use spaces between words, only between clauses/sentences.
+/// Sentence boundary detection is challenging.
+/// </summary>
+public sealed class ThaiLanguageProfile : LanguageProfileBase
+{
+    private static readonly HashSet<string> ThaiAbbreviations = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <inheritdoc/>
+    public override string LanguageCode => "th";
+
+    /// <inheritdoc/>
+    public override string LanguageName => "Thai";
+
+    /// <inheritdoc/>
+    public override string SentenceEndPattern =>
+        // Thai uses ฯ (Paiyannoi) as abbreviation, ๆ (Maiyamok) for repetition
+        // Sentences often end with space or Thai-specific punctuation
+        // Kho Lak (ฯลฯ) means "etc.", Pai-yan-noi (ฯ) is abbreviation marker
+        @"[.!?]+(?:\s|$)|(?:\s){2,}|[。！？]+";
+
+    /// <inheritdoc/>
+    public override string SectionMarkerPattern =>
+        @"^[\s]*(?:" +
+            // Markdown headers
+            @"#{1,6}\s+|" +
+            // Thai numbered sections: ข้อ 1, บทที่ 1, ตอนที่ 1
+            @"(?:ข้อ|บทที่|ตอนที่|ส่วนที่|หมวด)\s*\d+[.:]?\s*|" +
+            // Standard numbered list
+            @"\d+[\.\)]\s+|" +
+            // Thai number list using Thai numerals (๑, ๒, ๓...)
+            @"[๐-๙]+[\.\)]\s+|" +
+            // Bullet markers
+            @"[■□●○◆◇]\s+" +
+        @")";
+
+    /// <inheritdoc/>
+    public override IReadOnlySet<string> Abbreviations => ThaiAbbreviations;
+
+    /// <summary>
+    /// Thai text has approximately 2 characters per token.
+    /// Thai characters are more compact in meaning.
+    /// </summary>
+    protected override float CharsPerToken => 2.0f;
+}
+
+/// <summary>
 /// Language profile for Russian text processing.
 /// </summary>
 public sealed class RussianLanguageProfile : LanguageProfileBase

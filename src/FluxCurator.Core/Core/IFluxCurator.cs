@@ -152,4 +152,26 @@ public interface IFluxCurator
     Task<PreprocessingResult> PreprocessAsync(
         string text,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Streams chunks as they are generated, enabling memory-efficient processing of large texts.
+    /// </summary>
+    /// <param name="text">The text to chunk.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>An async enumerable of document chunks.</returns>
+    IAsyncEnumerable<DocumentChunk> ChunkStreamAsync(
+        string text,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Streams chunks as they are generated with custom options.
+    /// </summary>
+    /// <param name="text">The text to chunk.</param>
+    /// <param name="options">Custom chunking options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>An async enumerable of document chunks.</returns>
+    IAsyncEnumerable<DocumentChunk> ChunkStreamAsync(
+        string text,
+        ChunkOptions options,
+        CancellationToken cancellationToken = default);
 }
