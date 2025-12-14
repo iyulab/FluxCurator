@@ -10,7 +10,7 @@ Clean, protect, and chunk your text for RAG pipelines — no dependencies requir
 
 FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 14 languages and 13 countries' national IDs.
 
-**Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds optional LocalEmbedder integration for semantic chunking.
+**Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds optional [LocalAI.Embedder](https://github.com/iyulab/local-ai) integration for semantic chunking.
 
 ## Features
 
@@ -84,7 +84,7 @@ services.AddFluxCurator(options =>
     options.EnableContentFiltering = true;
 });
 
-// Or with LocalEmbedder for semantic chunking
+// Or with LocalAI.Embedder for semantic chunking
 services.AddFluxCuratorWithLocalEmbedder(options =>
 {
     options.DefaultChunkOptions = new ChunkOptions
@@ -476,7 +476,7 @@ FluxCurator is part of the Iyulab open-source RAG ecosystem:
 ┌─────────────────────────────────────────────────────────────┐
 │                    Foundation Layer                          │
 ├─────────────────────────────────────────────────────────────┤
-│  LocalEmbedder    LocalReranker    FluxCurator  FluxImprover│
+│  LocalAI          LocalAI          FluxCurator  FluxImprover│
 │  (Embeddings)     (Reranking)      (Chunking)   (LLM-based) │
 └───────────┬───────────────────────────┬─────────────────────┘
             │                           │

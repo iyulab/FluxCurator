@@ -158,18 +158,19 @@ public sealed class FluxCuratorOptions
 }
 
 /// <summary>
-/// Adapter to wrap LocalEmbedder IEmbeddingModel as IEmbedder.
+/// Adapter to wrap LocalAI.Embedder IEmbeddingModel as IEmbedder.
 /// Lazily loads the embedding model on first use.
 /// </summary>
 internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
 {
     private const string DefaultModel = "all-MiniLM-L6-v2";
-    private LocalEmbedder.IEmbeddingModel? _model;
+    private const int DefaultDimension = 384;
+    private LocalAI.Embedder.IEmbeddingModel? _model;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _disposed;
 
     /// <inheritdoc/>
-    public int EmbeddingDimension => 384; // all-MiniLM-L6-v2 dimension
+    public int EmbeddingDimension => _model?.Dimensions ?? DefaultDimension;
 
     /// <inheritdoc/>
     public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
@@ -202,10 +203,10 @@ internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
     /// <inheritdoc/>
     public float CalculateSimilarity(float[] embedding1, float[] embedding2)
     {
-        return LocalEmbedder.LocalEmbedder.CosineSimilarity(embedding1, embedding2);
+        return LocalAI.Embedder.LocalEmbedder.CosineSimilarity(embedding1, embedding2);
     }
 
-    private async Task<LocalEmbedder.IEmbeddingModel> GetModelAsync(CancellationToken cancellationToken)
+    private async Task<LocalAI.Embedder.IEmbeddingModel> GetModelAsync(CancellationToken cancellationToken)
     {
         if (_model != null)
             return _model;
@@ -216,7 +217,7 @@ internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
             if (_model != null)
                 return _model;
 
-            _model = await LocalEmbedder.LocalEmbedder.LoadAsync(DefaultModel).ConfigureAwait(false);
+            _model = await LocalAI.Embedder.LocalEmbedder.LoadAsync(DefaultModel).ConfigureAwait(false);
             return _model;
         }
         finally
@@ -231,8 +232,10 @@ internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
             return;
 
         _disposed = true;
-        _model?.Dispose();
+        if (_model != null)
+        {
+            await _model.DisposeAsync().ConfigureAwait(false);
+        }
         _initLock.Dispose();
-        await Task.CompletedTask;
     }
 }
