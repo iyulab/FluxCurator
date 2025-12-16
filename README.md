@@ -249,6 +249,28 @@ var chunks = await curator.ChunkAsync(text);
 | `Semantic` | Split by semantic similarity | **Yes** | RAG applications |
 | `Hierarchical` | Preserve document structure with parent-child relationships | No | Technical docs, Markdown |
 
+### Large Document Processing
+
+For documents with 50K+ tokens, use hierarchical chunking with the `ForLargeDocument` preset:
+
+```csharp
+// Use the preset for large documents
+var curator = new FluxCurator()
+    .WithChunkingOptions(ChunkOptions.ForLargeDocument);
+
+var chunks = await curator.ChunkAsync(largeDocument);
+
+// Access hierarchy metadata
+foreach (var chunk in chunks)
+{
+    var level = chunk.Metadata.Custom?["HierarchyLevel"];
+    var sectionPath = chunk.Location.SectionPath;
+    Console.WriteLine($"[Level {level}] {sectionPath}: {chunk.Content.Length} chars");
+}
+```
+
+See [Large Document Chunking Guide](docs/large-document-chunking.md) for detailed configuration options.
+
 ## Supported Languages
 
 FluxCurator includes language profiles for accurate sentence detection and token estimation:
@@ -320,8 +342,10 @@ var options = new ChunkOptions
 };
 
 // Preset configurations
-ChunkOptions.Default       // General purpose
-ChunkOptions.ForRAG        // Optimized for RAG (512 target, semantic)
+ChunkOptions.Default           // General purpose
+ChunkOptions.ForRAG            // Optimized for RAG (512 target, semantic)
+ChunkOptions.ForKorean         // Optimized for Korean text
+ChunkOptions.ForLargeDocument  // Large docs (50K+ tokens, hierarchical)
 ChunkOptions.FixedSize(256, 32)  // Fixed token size with overlap
 ```
 
@@ -568,6 +592,7 @@ FluxCurator/
 
 - [Getting Started](docs/getting-started.md) - Installation and basic usage
 - [Chunking Strategies](docs/chunking-strategies.md) - Detailed guide for each strategy
+- [Large Document Chunking](docs/large-document-chunking.md) - Processing 50K+ token documents
 - [Dependency Injection](docs/di-integration.md) - DI configuration and patterns
 - [FileFlux Integration](docs/fileflux-integration.md) - Integration with FileFlux
 
@@ -588,6 +613,46 @@ FluxCurator/
 - [x] Additional language profiles (Vietnamese, Thai)
 - [x] Custom detector registration via `RegisterPIIDetector`
 - [x] Streaming chunk support via `ChunkStreamAsync`
+
+## FAQ
+
+**Q: How do I process large documents (100K+ tokens)?**
+
+Use `ChunkingStrategy.Hierarchical` with the `ForLargeDocument` preset. It recognizes document structure (#, ##, ###) and chunks at section boundaries while preserving context.
+
+```csharp
+var curator = new FluxCurator()
+    .WithChunkingOptions(ChunkOptions.ForLargeDocument);
+```
+
+**Q: My chunks are too small/too large. How do I fix this?**
+
+Enable chunk balancing and adjust size limits:
+
+```csharp
+var options = new ChunkOptions
+{
+    MinChunkSize = 200,        // Merge chunks smaller than this
+    MaxChunkSize = 1024,       // Split chunks larger than this
+    EnableChunkBalancing = true
+};
+```
+
+**Q: How do I preserve context across chunk boundaries?**
+
+Increase the overlap size. For technical documents, 15-20% overlap is recommended:
+
+```csharp
+var options = new ChunkOptions
+{
+    TargetChunkSize = 512,
+    OverlapSize = 100  // ~20% overlap
+};
+```
+
+**Q: Does FluxCurator support document structure from FileFlux?**
+
+Yes. When documents are processed through FileFlux, structure hints (headings, sections) are passed to FluxCurator for intelligent boundary detection. Use `ChunkingStrategy.Hierarchical` for best results.
 
 ## Contributing
 

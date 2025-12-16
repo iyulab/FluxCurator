@@ -134,6 +134,24 @@ public sealed class ChunkOptions
     };
 
     /// <summary>
+    /// Creates options optimized for large documents (50K+ tokens).
+    /// Uses hierarchical chunking with larger chunk sizes and increased overlap.
+    /// </summary>
+    public static ChunkOptions ForLargeDocument => new()
+    {
+        Strategy = ChunkingStrategy.Hierarchical,
+        TargetChunkSize = 768,
+        MinChunkSize = 200,
+        MaxChunkSize = 1536,
+        OverlapSize = 128,
+        PreserveSentences = true,
+        PreserveParagraphs = true,
+        PreserveSectionHeaders = true,
+        IncludeMetadata = true,
+        EnableChunkBalancing = true
+    };
+
+    /// <summary>
     /// Creates options for fixed-size token chunking.
     /// </summary>
     /// <param name="tokenSize">Target token size per chunk.</param>
