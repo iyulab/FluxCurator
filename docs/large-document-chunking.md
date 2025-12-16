@@ -144,6 +144,89 @@ await foreach (var chunk in curator.ChunkStreamAsync(largeText))
 }
 ```
 
+## Korean Document Processing
+
+FluxCurator includes a specialized Korean language profile for accurate sentence detection and token estimation.
+
+### Basic Korean Text Chunking
+
+```csharp
+var curator = new FluxCurator()
+    .WithChunkingOptions(opt =>
+    {
+        opt.Strategy = ChunkingStrategy.Hierarchical;
+        opt.LanguageCode = "ko";          // Use Korean language profile
+        opt.TargetChunkSize = 512;
+        opt.MaxChunkSize = 1024;
+        opt.PreserveSectionHeaders = true;
+        opt.EnableChunkBalancing = true;
+    });
+
+var chunks = await curator.ChunkAsync(koreanText);
+```
+
+Or use the Korean preset combined with hierarchical strategy:
+
+```csharp
+var options = ChunkOptions.ForKorean;
+options.Strategy = ChunkingStrategy.Hierarchical;
+
+var curator = new FluxCurator()
+    .WithChunkingOptions(options);
+```
+
+### Processing Korean Documents (DOCX, PPTX, HWP)
+
+FluxCurator processes **text**, not document files directly. Use [FileFlux](https://github.com/iyulab/FileFlux) to extract text from document files first:
+
+```csharp
+// Step 1: Extract text from Korean document using FileFlux
+var fileFlux = new FileFlux.DocumentProcessor();
+var document = await fileFlux.ProcessAsync("보고서.docx");
+
+// Step 2: Chunk the extracted text with FluxCurator
+var curator = new FluxCurator()
+    .WithTextRefinement(TextRefineOptions.ForKorean)  // Remove Korean noise patterns
+    .WithChunkingOptions(opt =>
+    {
+        opt.Strategy = ChunkingStrategy.Hierarchical;
+        opt.LanguageCode = "ko";
+        opt.TargetChunkSize = 512;
+        opt.MaxChunkSize = 1024;
+        opt.EnableChunkBalancing = true;
+    });
+
+var chunks = await curator.ChunkAsync(document.Text);
+```
+
+### Korean-Specific Features
+
+| Feature | Description |
+|---------|-------------|
+| Sentence Detection | Recognizes Korean endings: 습니다, 입니다, 세요, 에요, etc. |
+| Token Estimation | ~1.5-2 characters per token (vs ~4 for English) |
+| Section Markers | Supports 제1장, 제1절, Korean bullets (ㅇ, ○, ●, □, ■) |
+| Text Refinement | `TextRefineOptions.ForKorean` removes 댓글 sections, copyright notices |
+
+### Option Reference
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `LanguageCode` | `null` (auto-detect) | Set to `"ko"` for Korean text |
+| `EnableChunkBalancing` | `true` | Merges small chunks, splits large ones |
+| `PreserveSectionHeaders` | `true` | Keeps section headers with their content |
+| `PreserveSentences` | `true` | Avoids breaking mid-sentence |
+| `PreserveParagraphs` | `true` | Respects paragraph boundaries |
+
+### Recommended Settings by Document Type
+
+| Document Type | Target Size | Max Size | Overlap | Notes |
+|---------------|-------------|----------|---------|-------|
+| Technical Manual | 512-768 | 1024-1536 | 15-20% | Use hierarchical |
+| Business Report | 400-512 | 800-1024 | 10-15% | Enable balancing |
+| Legal Document | 768-1024 | 1536-2048 | 20% | Preserve structure |
+| Presentation (PPTX) | 256-400 | 512-800 | 10% | Smaller chunks per slide |
+
 ## Integration with FileFlux
 
 When processing documents through FileFlux, structure hints are automatically passed:

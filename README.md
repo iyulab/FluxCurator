@@ -654,6 +654,29 @@ var options = new ChunkOptions
 
 Yes. When documents are processed through FileFlux, structure hints (headings, sections) are passed to FluxCurator for intelligent boundary detection. Use `ChunkingStrategy.Hierarchical` for best results.
 
+**Q: How do I process Korean documents (DOCX, PPTX, HWP)?**
+
+FluxCurator processes text, not document files directly. Use FileFlux to extract text first, then chunk with FluxCurator:
+
+```csharp
+// 1. Extract text from document using FileFlux
+var document = await fileFlux.ProcessAsync("보고서.docx");
+
+// 2. Chunk the extracted Korean text
+var curator = new FluxCurator()
+    .WithTextRefinement(TextRefineOptions.ForKorean)
+    .WithChunkingOptions(opt =>
+    {
+        opt.Strategy = ChunkingStrategy.Hierarchical;
+        opt.LanguageCode = "ko";  // Use Korean language profile
+        opt.EnableChunkBalancing = true;
+    });
+
+var chunks = await curator.ChunkAsync(document.Text);
+```
+
+See [Large Document Chunking Guide](docs/large-document-chunking.md#korean-document-processing) for detailed Korean document processing examples.
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
