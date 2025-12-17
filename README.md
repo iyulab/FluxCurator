@@ -638,6 +638,19 @@ var options = new ChunkOptions
 };
 ```
 
+**Q: I set MaxChunkSize=512 but my chunks are 1,500+ characters. Is this a bug?**
+
+No, this is expected behavior. `MaxChunkSize` specifies **estimated tokens**, not characters. FluxCurator estimates tokens using language-specific heuristics without an actual tokenizer:
+
+| Language | Chars/Token | 512 tokens ≈ |
+|----------|-------------|--------------|
+| English | ~4 | ~2,048 chars |
+| Korean | ~1.5-2 | ~750-1,024 chars |
+| Chinese/Japanese | ~1.5-2 | ~750-1,024 chars |
+| Mixed content | weighted avg | varies |
+
+For mixed-language content (e.g., Korean with English terms), chunk sizes fall between the language-specific ranges. If you need precise token counts, verify with your actual tokenizer after chunking.
+
 **Q: How do I preserve context across chunk boundaries?**
 
 Increase the overlap size. For technical documents, 15-20% overlap is recommended:

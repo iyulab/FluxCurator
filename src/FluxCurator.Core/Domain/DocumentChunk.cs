@@ -90,6 +90,20 @@ public sealed class ChunkLocation
     public int EndLine { get; set; } = 1;
 
     /// <summary>
+    /// Gets or sets the start page number (1-based) in the source document.
+    /// This is typically set by document processors (e.g., FileFlux) based on page range hints.
+    /// Null if page information is not available.
+    /// </summary>
+    public int? StartPage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the end page number (1-based) in the source document.
+    /// This is typically set by document processors (e.g., FileFlux) based on page range hints.
+    /// Null if page information is not available.
+    /// </summary>
+    public int? EndPage { get; set; }
+
+    /// <summary>
     /// Gets or sets the section path (e.g., "Chapter 1 > Section 2").
     /// </summary>
     public string? SectionPath { get; set; }
@@ -98,6 +112,11 @@ public sealed class ChunkLocation
     /// Gets the length of this chunk in characters.
     /// </summary>
     public int Length => EndPosition - StartPosition;
+
+    /// <summary>
+    /// Gets whether this chunk has page information.
+    /// </summary>
+    public bool HasPageInfo => StartPage.HasValue;
 }
 
 /// <summary>

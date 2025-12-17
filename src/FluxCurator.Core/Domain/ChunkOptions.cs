@@ -3,6 +3,24 @@ namespace FluxCurator.Core.Domain;
 /// <summary>
 /// Configuration options for text chunking operations.
 /// </summary>
+/// <remarks>
+/// <para>
+/// All token-based sizes (TargetChunkSize, MinChunkSize, MaxChunkSize, OverlapSize) use
+/// <b>estimated token counts</b> based on language-specific heuristics, not actual tokenizer output.
+/// </para>
+/// <para>
+/// Token estimation ratios by language:
+/// <list type="bullet">
+///   <item><description>English: ~4 characters per token (512 tokens ≈ 2,048 chars)</description></item>
+///   <item><description>Korean: ~1.5-2 characters per token (512 tokens ≈ 750-1,024 chars)</description></item>
+///   <item><description>Chinese/Japanese: ~1.5-2 characters per token</description></item>
+///   <item><description>Mixed content: weighted average based on character types</description></item>
+/// </list>
+/// </para>
+/// <para>
+/// For precise token control, verify chunk sizes with your actual tokenizer after chunking.
+/// </para>
+/// </remarks>
 public sealed class ChunkOptions
 {
     /// <summary>
@@ -12,28 +30,32 @@ public sealed class ChunkOptions
     public ChunkingStrategy Strategy { get; set; } = ChunkingStrategy.Auto;
 
     /// <summary>
-    /// Gets or sets the target chunk size in tokens.
+    /// Gets or sets the target chunk size in estimated tokens.
+    /// Token count is estimated using language-specific heuristics (see class remarks).
     /// Default: 512 tokens.
     /// </summary>
     public int TargetChunkSize { get; set; } = 512;
 
     /// <summary>
-    /// Gets or sets the minimum chunk size in tokens.
+    /// Gets or sets the minimum chunk size in estimated tokens.
     /// Chunks smaller than this will be merged with adjacent chunks.
+    /// Token count is estimated using language-specific heuristics (see class remarks).
     /// Default: 100 tokens.
     /// </summary>
     public int MinChunkSize { get; set; } = 100;
 
     /// <summary>
-    /// Gets or sets the maximum chunk size in tokens.
+    /// Gets or sets the maximum chunk size in estimated tokens.
     /// Chunks larger than this will be split.
+    /// Token count is estimated using language-specific heuristics (see class remarks).
     /// Default: 1024 tokens.
     /// </summary>
     public int MaxChunkSize { get; set; } = 1024;
 
     /// <summary>
-    /// Gets or sets the overlap size in tokens between consecutive chunks.
+    /// Gets or sets the overlap size in estimated tokens between consecutive chunks.
     /// Helps maintain context across chunk boundaries.
+    /// Token count is estimated using language-specific heuristics (see class remarks).
     /// Default: 50 tokens.
     /// </summary>
     public int OverlapSize { get; set; } = 50;
