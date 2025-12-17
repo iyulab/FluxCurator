@@ -158,14 +158,14 @@ public sealed class FluxCuratorOptions
 }
 
 /// <summary>
-/// Adapter to wrap LocalAI.Embedder IEmbeddingModel as IEmbedder.
+/// Adapter to wrap LMSupply.Embedder IEmbeddingModel as IEmbedder.
 /// Lazily loads the embedding model on first use.
 /// </summary>
 internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
 {
     private const string DefaultModel = "all-MiniLM-L6-v2";
     private const int DefaultDimension = 384;
-    private LocalAI.Embedder.IEmbeddingModel? _model;
+    private LMSupply.Embedder.IEmbeddingModel? _model;
     private readonly SemaphoreSlim _initLock = new(1, 1);
     private bool _disposed;
 
@@ -203,10 +203,10 @@ internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
     /// <inheritdoc/>
     public float CalculateSimilarity(float[] embedding1, float[] embedding2)
     {
-        return LocalAI.Embedder.LocalEmbedder.CosineSimilarity(embedding1, embedding2);
+        return LMSupply.Embedder.LocalEmbedder.CosineSimilarity(embedding1, embedding2);
     }
 
-    private async Task<LocalAI.Embedder.IEmbeddingModel> GetModelAsync(CancellationToken cancellationToken)
+    private async Task<LMSupply.Embedder.IEmbeddingModel> GetModelAsync(CancellationToken cancellationToken)
     {
         if (_model != null)
             return _model;
@@ -217,7 +217,7 @@ internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
             if (_model != null)
                 return _model;
 
-            _model = await LocalAI.Embedder.LocalEmbedder.LoadAsync(DefaultModel).ConfigureAwait(false);
+            _model = await LMSupply.Embedder.LocalEmbedder.LoadAsync(DefaultModel).ConfigureAwait(false);
             return _model;
         }
         finally
