@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <!-- Project References -->
-    <PackageVersion Include="LMSupply.Embedder" Version="0.7.2" />
+    <PackageVersion Include="LMSupply.Embedder" Version="0.8.3" />
 
     <!-- Microsoft Extensions -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
