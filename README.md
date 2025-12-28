@@ -342,12 +342,31 @@ var options = new ChunkOptions
 };
 
 // Preset configurations
-ChunkOptions.Default           // General purpose
+ChunkOptions.Default           // General purpose (512 target, 1024 max)
 ChunkOptions.ForRAG            // Optimized for RAG (512 target, semantic)
 ChunkOptions.ForKorean         // Optimized for Korean text
 ChunkOptions.ForLargeDocument  // Large docs (50K+ tokens, hierarchical)
+ChunkOptions.ForShortContext   // Short-context models (MiniLM, BGE-small)
+ChunkOptions.ForMediumContext  // Medium-context models (e5, BGE-base)
+ChunkOptions.ForLongContext    // Long-context models (OpenAI, Cohere)
 ChunkOptions.FixedSize(256, 32)  // Fixed token size with overlap
 ```
+
+### Preset Comparison by Embedding Model
+
+Choose the right preset based on your embedding model's context window:
+
+| Preset | Target | Max | Overlap | Strategy | Best For |
+|--------|--------|-----|---------|----------|----------|
+| `Default` | 512 | 1024 | 50 | Auto | General purpose |
+| `ForRAG` | 512 | 1024 | 64 | Semantic | RAG with semantic chunking |
+| `ForShortContext` | 200 | 256 | 25 | Sentence | MiniLM, BGE-small (256 tokens) |
+| `ForMediumContext` | 400 | 512 | 50 | Sentence | e5, BGE-base, GTE (512 tokens) |
+| `ForLongContext` | 1024 | 2048 | 128 | Paragraph | OpenAI, Cohere (8K+ tokens) |
+| `ForKorean` | 400 | 800 | 40 | Sentence | Korean text processing |
+| `ForLargeDocument` | 768 | 1536 | 128 | Hierarchical | 50K+ token documents |
+
+> **Note**: All sizes are in **estimated tokens**, not characters. See FAQ for character-to-token conversion ratios.
 
 ### Masking Strategies
 

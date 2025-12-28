@@ -188,4 +188,55 @@ public sealed class ChunkOptions
         PreserveSentences = false,
         PreserveParagraphs = false
     };
+
+    /// <summary>
+    /// Creates options optimized for short-context embedding models (256 tokens max).
+    /// Suitable for: all-MiniLM-L6-v2, paraphrase-MiniLM, BGE-small, etc.
+    /// </summary>
+    public static ChunkOptions ForShortContext => new()
+    {
+        Strategy = ChunkingStrategy.Sentence,
+        TargetChunkSize = 200,
+        MinChunkSize = 50,
+        MaxChunkSize = 256,
+        OverlapSize = 25,
+        PreserveSentences = true,
+        PreserveParagraphs = true,
+        IncludeMetadata = true,
+        EnableChunkBalancing = true
+    };
+
+    /// <summary>
+    /// Creates options optimized for medium-context embedding models (512 tokens max).
+    /// Suitable for: multilingual-e5, BGE-base, GTE-base, etc.
+    /// </summary>
+    public static ChunkOptions ForMediumContext => new()
+    {
+        Strategy = ChunkingStrategy.Sentence,
+        TargetChunkSize = 400,
+        MinChunkSize = 100,
+        MaxChunkSize = 512,
+        OverlapSize = 50,
+        PreserveSentences = true,
+        PreserveParagraphs = true,
+        IncludeMetadata = true,
+        EnableChunkBalancing = true
+    };
+
+    /// <summary>
+    /// Creates options optimized for long-context embedding models (8K+ tokens).
+    /// Suitable for: OpenAI text-embedding-3, Cohere embed-v3, etc.
+    /// </summary>
+    public static ChunkOptions ForLongContext => new()
+    {
+        Strategy = ChunkingStrategy.Paragraph,
+        TargetChunkSize = 1024,
+        MinChunkSize = 256,
+        MaxChunkSize = 2048,
+        OverlapSize = 128,
+        PreserveSentences = true,
+        PreserveParagraphs = true,
+        IncludeMetadata = true,
+        EnableChunkBalancing = true
+    };
 }
