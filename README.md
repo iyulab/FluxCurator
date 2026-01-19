@@ -10,7 +10,7 @@ Clean, protect, and chunk your text for RAG pipelines — no dependencies requir
 
 FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 14 languages and 13 countries' national IDs.
 
-**Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds optional [LMSupply.Embedder](https://github.com/iyulab/lm-supply) integration for semantic chunking.
+**Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds DI support and semantic chunking capabilities via external `IEmbedder` injection.
 
 ## Features
 
@@ -30,7 +30,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 ## Installation
 
 ```bash
-# Main package (includes LocalEmbedder for semantic chunking)
+# Main package (DI support and semantic chunking)
 dotnet add package FluxCurator
 
 # Core package only (zero dependencies)
@@ -84,8 +84,9 @@ services.AddFluxCurator(options =>
     options.EnableContentFiltering = true;
 });
 
-// Or with LMSupply.Embedder for semantic chunking
-services.AddFluxCuratorWithLocalEmbedder(options =>
+// With external IEmbedder for semantic chunking
+services.AddSingleton<IEmbedder>(myEmbedder);  // Register your embedder first
+services.AddFluxCurator(options =>
 {
     options.DefaultChunkOptions = new ChunkOptions
     {
@@ -225,9 +226,9 @@ Console.WriteLine(result.GetSummary());
 ### Semantic Chunking
 
 ```csharp
-// With LocalEmbedder integration (auto-loaded via DI)
+// Requires an IEmbedder implementation (e.g., OpenAI, LMSupply, etc.)
 var curator = new FluxCurator()
-    .UseEmbedder(myEmbedder)
+    .UseEmbedder(myEmbedder)  // Inject your IEmbedder implementation
     .WithChunkingOptions(opt =>
     {
         opt.Strategy = ChunkingStrategy.Semantic;
@@ -586,7 +587,6 @@ FluxCurator/
 │   │       │   ├── SentenceChunker.cs
 │   │       │   ├── ParagraphChunker.cs
 │   │       │   ├── TokenChunker.cs
-│   │       │   ├── SemanticChunker.cs
 │   │       │   └── HierarchicalChunker.cs
 │   │       └── Languages/
 │   │           ├── LanguageProfileRegistry.cs
@@ -596,7 +596,8 @@ FluxCurator/
 │   └── FluxCurator/                   # Main package
 │       ├── Infrastructure/
 │       │   └── Chunking/
-│       │       └── ChunkerFactory.cs  # Factory with all strategies
+│       │       ├── ChunkerFactory.cs  # Factory with all strategies
+│       │       └── SemanticChunker.cs # Requires IEmbedder
 │       ├── ServiceCollectionExtensions.cs
 │       └── FluxCurator.cs             # Main API
 │

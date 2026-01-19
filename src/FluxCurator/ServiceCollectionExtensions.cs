@@ -26,6 +26,11 @@ public static class ServiceCollectionExtensions
     /// - FluxCurator (as transient)
     ///
     /// If an IEmbedder is already registered, it will be used for semantic chunking.
+    /// To enable semantic chunking, register an IEmbedder implementation before calling this method:
+    /// <code>
+    /// services.AddSingleton&lt;IEmbedder&gt;(myEmbedderInstance);
+    /// services.AddFluxCurator();
+    /// </code>
     /// </remarks>
     public static IServiceCollection AddFluxCurator(this IServiceCollection services)
     {
@@ -94,36 +99,6 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>
-    /// Adds FluxCurator with LocalEmbedder for semantic chunking capabilities.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <returns>The service collection for chaining.</returns>
-    /// <remarks>
-    /// This method registers LocalEmbedder as the IEmbedder implementation,
-    /// enabling semantic chunking capabilities.
-    /// </remarks>
-    public static IServiceCollection AddFluxCuratorWithLocalEmbedder(this IServiceCollection services)
-    {
-        return services.AddFluxCuratorWithLocalEmbedder(_ => { });
-    }
-
-    /// <summary>
-    /// Adds FluxCurator with LocalEmbedder and configuration.
-    /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configure">Action to configure FluxCurator options.</param>
-    /// <returns>The service collection for chaining.</returns>
-    public static IServiceCollection AddFluxCuratorWithLocalEmbedder(
-        this IServiceCollection services,
-        Action<FluxCuratorOptions> configure)
-    {
-        // Register LocalEmbedder as IEmbedder
-        services.TryAddSingleton<IEmbedder, LocalEmbedderAdapter>();
-
-        // Add FluxCurator services
-        return services.AddFluxCurator(configure);
-    }
 }
 
 /// <summary>
@@ -157,85 +132,3 @@ public sealed class FluxCuratorOptions
     public ContentFilterOptionsType? ContentFilterOptions { get; set; }
 }
 
-/// <summary>
-/// Adapter to wrap LMSupply.Embedder IEmbeddingModel as IEmbedder.
-/// Lazily loads the embedding model on first use.
-/// </summary>
-internal sealed class LocalEmbedderAdapter : IEmbedder, IAsyncDisposable
-{
-    private const string DefaultModel = "all-MiniLM-L6-v2";
-    private const int DefaultDimension = 384;
-    private LMSupply.Embedder.IEmbeddingModel? _model;
-    private readonly SemaphoreSlim _initLock = new(1, 1);
-    private bool _disposed;
-
-    /// <inheritdoc/>
-    public int EmbeddingDimension => _model?.Dimensions ?? DefaultDimension;
-
-    /// <inheritdoc/>
-    public async Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-        if (string.IsNullOrWhiteSpace(text))
-            return new float[EmbeddingDimension];
-
-        var model = await GetModelAsync(cancellationToken).ConfigureAwait(false);
-        return await model.EmbedAsync(text, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    public async Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(
-        IEnumerable<string> texts,
-        CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-        var textList = texts as IReadOnlyList<string> ?? texts.ToList();
-        if (textList.Count == 0)
-            return [];
-
-        var model = await GetModelAsync(cancellationToken).ConfigureAwait(false);
-        var embeddings = await model.EmbedAsync(textList, cancellationToken).ConfigureAwait(false);
-        return embeddings.ToList();
-    }
-
-    /// <inheritdoc/>
-    public float CalculateSimilarity(float[] embedding1, float[] embedding2)
-    {
-        return LMSupply.Embedder.LocalEmbedder.CosineSimilarity(embedding1, embedding2);
-    }
-
-    private async Task<LMSupply.Embedder.IEmbeddingModel> GetModelAsync(CancellationToken cancellationToken)
-    {
-        if (_model != null)
-            return _model;
-
-        await _initLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            if (_model != null)
-                return _model;
-
-            _model = await LMSupply.Embedder.LocalEmbedder.LoadAsync(DefaultModel).ConfigureAwait(false);
-            return _model;
-        }
-        finally
-        {
-            _initLock.Release();
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_disposed)
-            return;
-
-        _disposed = true;
-        if (_model != null)
-        {
-            await _model.DisposeAsync().ConfigureAwait(false);
-        }
-        _initLock.Dispose();
-    }
-}

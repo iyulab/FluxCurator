@@ -162,8 +162,8 @@ Supports Markdown-style headers:
 Splits text based on semantic similarity using embeddings.
 
 ```csharp
-// Requires an embedder
-var embedder = new LocalEmbedder(); // or your IEmbedder implementation
+// Requires an IEmbedder implementation (inject your own)
+var embedder = myEmbedder; // Your IEmbedder implementation (e.g., OpenAI, LMSupply, etc.)
 var factory = new ChunkerFactory(embedder);
 
 var chunker = factory.CreateChunker(ChunkingStrategy.Semantic);

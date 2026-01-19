@@ -18,12 +18,16 @@ services.AddFluxCurator(options =>
 });
 ```
 
-### With LocalEmbedder (Semantic Chunking)
+### With External Embedder (Semantic Chunking)
 
 ```csharp
 using FluxCurator;
 
-services.AddFluxCuratorWithLocalEmbedder(options =>
+// Register your IEmbedder implementation first
+services.AddSingleton<IEmbedder, MyEmbedder>();
+
+// Then add FluxCurator (will automatically use the registered IEmbedder)
+services.AddFluxCurator(options =>
 {
     options.DefaultChunkOptions = new ChunkOptions
     {
@@ -45,7 +49,7 @@ After calling `AddFluxCurator`, the following services are available:
 | `IFluxCurator` | Scoped | Main API for text processing |
 | `IPIIMasker` | Singleton | PII detection and masking |
 | `IContentFilter` | Singleton | Content filtering |
-| `IEmbedder` | Singleton | Embedder (if using LocalEmbedder) |
+| `IEmbedder` | Singleton | Embedder (if registered externally) |
 
 ## Using IChunkerFactory
 
@@ -226,8 +230,11 @@ public class OpenAIEmbedder : IEmbedder
 ```csharp
 var builder = WebApplication.CreateBuilder(args);
 
+// Register your embedder (optional, for semantic chunking)
+builder.Services.AddSingleton<IEmbedder, MyEmbedder>();
+
 // Add FluxCurator
-builder.Services.AddFluxCuratorWithLocalEmbedder(options =>
+builder.Services.AddFluxCurator(options =>
 {
     options.DefaultChunkOptions = ChunkOptions.ForRAG;
     options.EnablePIIMasking = true;

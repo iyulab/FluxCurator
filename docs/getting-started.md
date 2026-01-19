@@ -7,7 +7,7 @@ This guide walks you through setting up and using FluxCurator for text preproces
 FluxCurator is available as two NuGet packages:
 
 ```bash
-# Main package (includes LocalEmbedder for semantic chunking)
+# Main package (DI support and semantic chunking)
 dotnet add package FluxCurator
 
 # Core package only (zero dependencies)
@@ -22,10 +22,9 @@ dotnet add package FluxCurator.Core
 | Hierarchical Chunking | Yes | Yes |
 | PII Masking | Yes | Yes |
 | Content Filtering | Yes | Yes |
-| Semantic Chunking | No | Yes |
-| LocalEmbedder Integration | No | Yes |
+| Semantic Chunking | No | Yes (with IEmbedder) |
 | DI Extensions | No | Yes |
-| External Dependencies | None | LocalEmbedder |
+| External Dependencies | None | None (IEmbedder injected) |
 
 ## Quick Start
 
