@@ -103,7 +103,7 @@ public sealed class PhoneDetector : PIIDetectorBase
         if (normalized.Length < 10 || normalized.Length > 11)
             return false;
 
-        if (!normalized.StartsWith("01"))
+        if (!normalized.StartsWith("01", StringComparison.Ordinal))
             return false;
 
         var prefix = normalized[..3];
@@ -122,11 +122,11 @@ public sealed class PhoneDetector : PIIDetectorBase
             return false;
 
         // Seoul (02)
-        if (normalized.StartsWith("02"))
+        if (normalized.StartsWith("02", StringComparison.Ordinal))
             return true;
 
         // Other regions (031-064)
-        if (normalized.StartsWith("0") && normalized.Length >= 2)
+        if (normalized.StartsWith('0') && normalized.Length >= 2)
         {
             var areaCode = normalized[1..3];
             if (int.TryParse(areaCode, out var code))
@@ -146,8 +146,8 @@ public sealed class PhoneDetector : PIIDetectorBase
         // Toll-free and special service numbers
         if (normalized.Length == 8 || normalized.Length == 12)
         {
-            if (normalized.StartsWith("15") || normalized.StartsWith("16") ||
-                normalized.StartsWith("18") || normalized.StartsWith("080"))
+            if (normalized.StartsWith("15", StringComparison.Ordinal) || normalized.StartsWith("16", StringComparison.Ordinal) ||
+                normalized.StartsWith("18", StringComparison.Ordinal) || normalized.StartsWith("080", StringComparison.Ordinal))
             {
                 return true;
             }

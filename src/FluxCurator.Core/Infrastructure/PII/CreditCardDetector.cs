@@ -105,7 +105,7 @@ public sealed class CreditCardDetector : PIIDetectorBase
             return CardType.Unknown;
 
         // Visa: starts with 4
-        if (number.StartsWith("4") && (number.Length == 13 || number.Length == 16 || number.Length == 19))
+        if (number.StartsWith('4') && (number.Length == 13 || number.Length == 16 || number.Length == 19))
             return CardType.Visa;
 
         // Mastercard: 51-55 or 2221-2720
@@ -119,13 +119,13 @@ public sealed class CreditCardDetector : PIIDetectorBase
         }
 
         // American Express: 34 or 37
-        if ((number.StartsWith("34") || number.StartsWith("37")) && number.Length == 15)
+        if ((number.StartsWith("34", StringComparison.Ordinal) || number.StartsWith("37", StringComparison.Ordinal)) && number.Length == 15)
             return CardType.Amex;
 
         // Discover: 6011, 644-649, 65
         if (number.Length == 16)
         {
-            if (number.StartsWith("6011") || number.StartsWith("65"))
+            if (number.StartsWith("6011", StringComparison.Ordinal) || number.StartsWith("65", StringComparison.Ordinal))
                 return CardType.Discover;
 
             if (int.TryParse(number[..3], out var prefix3) && prefix3 >= 644 && prefix3 <= 649)
@@ -141,11 +141,11 @@ public sealed class CreditCardDetector : PIIDetectorBase
 
         // Korean card prefixes (examples - actual prefixes may vary)
         // BC Card
-        if (number.StartsWith("94") && number.Length == 16)
+        if (number.StartsWith("94", StringComparison.Ordinal) && number.Length == 16)
             return CardType.KoreanBC;
 
         // Samsung Card
-        if (number.StartsWith("9") && number.Length == 16)
+        if (number.StartsWith('9') && number.Length == 16)
             return CardType.KoreanSamsung;
 
         // Generic valid-looking card (16 digits starting with valid digit)

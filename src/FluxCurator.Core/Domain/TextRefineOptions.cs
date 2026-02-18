@@ -14,40 +14,40 @@ public sealed class TextRefineOptions
     /// Gets or sets whether to remove lines that contain only whitespace.
     /// Default: false.
     /// </summary>
-    public bool RemoveBlankLines { get; set; } = false;
+    public bool RemoveBlankLines { get; set; }
 
     /// <summary>
     /// Gets or sets whether to remove consecutive duplicate lines.
     /// Useful for cleaning copy-paste artifacts and HTML conversion issues.
     /// Default: false.
     /// </summary>
-    public bool RemoveDuplicateLines { get; set; } = false;
+    public bool RemoveDuplicateLines { get; set; }
 
     /// <summary>
     /// Gets or sets whether to remove empty list markers (-, *, •, +, numbered).
     /// Empty list items like "- " or "1. " with no content are removed.
     /// Default: false.
     /// </summary>
-    public bool RemoveEmptyListItems { get; set; } = false;
+    public bool RemoveEmptyListItems { get; set; }
 
     /// <summary>
     /// Gets or sets whether to collapse multiple spaces and newlines to single spaces.
     /// Default: false.
     /// </summary>
-    public bool NormalizeWhitespace { get; set; } = false;
+    public bool NormalizeWhitespace { get; set; }
 
     /// <summary>
     /// Gets or sets whether to collapse multiple consecutive blank lines to a single blank line.
     /// Different from RemoveBlankLines which removes all blank lines.
     /// Default: false.
     /// </summary>
-    public bool CollapseBlankLines { get; set; } = false;
+    public bool CollapseBlankLines { get; set; }
 
     /// <summary>
     /// Gets or sets whether to trim leading and trailing whitespace from each line.
     /// Default: false.
     /// </summary>
-    public bool TrimLines { get; set; } = false;
+    public bool TrimLines { get; set; }
 
     /// <summary>
     /// Gets or sets the minimum line length to keep.
@@ -55,7 +55,7 @@ public sealed class TextRefineOptions
     /// Set to 0 to keep all lines.
     /// Default: 0.
     /// </summary>
-    public int MinLineLength { get; set; } = 0;
+    public int MinLineLength { get; set; }
 
     // ========================================
     // Token Optimization Options
@@ -97,7 +97,7 @@ public sealed class TextRefineOptions
     /// Removes Unicode box drawing characters (╔═╗║╚╝┌─┐│└┘) while preserving content.
     /// Default: false.
     /// </summary>
-    public bool RemoveAsciiArt { get; set; } = false;
+    public bool RemoveAsciiArt { get; set; }
 
     /// <summary>
     /// Gets or sets whether to remove inline Base64 data URIs.

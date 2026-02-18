@@ -131,7 +131,7 @@ public sealed partial class HierarchicalChunker : ChunkerBase
     /// <summary>
     /// Parses the text into hierarchical sections based on markdown headers.
     /// </summary>
-    private List<DocumentSection> ParseSections(string text)
+    private static List<DocumentSection> ParseSections(string text)
     {
         var sections = new List<DocumentSection>();
         var headerPattern = HeaderRegex();

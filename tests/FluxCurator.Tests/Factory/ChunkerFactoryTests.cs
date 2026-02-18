@@ -4,10 +4,12 @@ using global::FluxCurator.Core.Core;
 using global::FluxCurator.Core.Domain;
 using global::FluxCurator.Core.Infrastructure.Chunking;
 using global::FluxCurator.Infrastructure.Chunking;
-using Moq;
+using NSubstitute;
 
 public class ChunkerFactoryTests
 {
+    private static readonly float[] s_testEmbedding = [0.1f, 0.2f, 0.3f];
+
     [Fact]
     public void CreateChunker_SentenceStrategy_ReturnsSentenceChunker()
     {
@@ -92,15 +94,15 @@ public class ChunkerFactoryTests
     public void CreateChunker_SemanticWithEmbedder_ReturnsSemanticChunker()
     {
         // Arrange
-        var mockEmbedder = new Mock<IEmbedder>();
+        var mockEmbedder = Substitute.For<IEmbedder>();
         mockEmbedder
-            .Setup(e => e.GenerateEmbeddingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new float[] { 0.1f, 0.2f, 0.3f });
+            .GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(s_testEmbedding);
         mockEmbedder
-            .Setup(e => e.EmbeddingDimension)
+            .EmbeddingDimension
             .Returns(3);
 
-        var factory = new ChunkerFactory(mockEmbedder.Object);
+        var factory = new ChunkerFactory(mockEmbedder);
 
         // Act
         var chunker = factory.CreateChunker(ChunkingStrategy.Semantic);
@@ -138,8 +140,8 @@ public class ChunkerFactoryTests
     public void IsStrategyAvailable_SemanticWithEmbedder_ReturnsTrue()
     {
         // Arrange
-        var mockEmbedder = new Mock<IEmbedder>();
-        var factory = new ChunkerFactory(mockEmbedder.Object);
+        var mockEmbedder = Substitute.For<IEmbedder>();
+        var factory = new ChunkerFactory(mockEmbedder);
 
         // Act & Assert
         Assert.True(factory.IsStrategyAvailable(ChunkingStrategy.Semantic));
@@ -166,8 +168,8 @@ public class ChunkerFactoryTests
     public void AvailableStrategies_WithEmbedder_IncludesSemantic()
     {
         // Arrange
-        var mockEmbedder = new Mock<IEmbedder>();
-        var factory = new ChunkerFactory(mockEmbedder.Object);
+        var mockEmbedder = Substitute.For<IEmbedder>();
+        var factory = new ChunkerFactory(mockEmbedder);
 
         // Act
         var strategies = factory.AvailableStrategies;

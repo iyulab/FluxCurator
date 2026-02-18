@@ -109,7 +109,7 @@ public sealed class ChunkOptions
     /// Multiple spaces/newlines become single spaces.
     /// Default: false.
     /// </summary>
-    public bool NormalizeWhitespace { get; set; } = false;
+    public bool NormalizeWhitespace { get; set; }
 
     /// <summary>
     /// Gets or sets whether to enable automatic post-processing to balance chunk sizes.

@@ -88,7 +88,7 @@ public sealed class ChunkBalancer : IChunkBalancer
         return stats;
     }
 
-    private List<DocumentChunk> MergeUndersizedChunks(
+    private static List<DocumentChunk> MergeUndersizedChunks(
         IReadOnlyList<DocumentChunk> chunks,
         ChunkOptions options)
     {
@@ -225,7 +225,7 @@ public sealed class ChunkBalancer : IChunkBalancer
         return result;
     }
 
-    private List<DocumentChunk> SplitOversizedChunks(
+    private static List<DocumentChunk> SplitOversizedChunks(
         List<DocumentChunk> chunks,
         ChunkOptions options)
     {
@@ -247,7 +247,7 @@ public sealed class ChunkBalancer : IChunkBalancer
         return result;
     }
 
-    private List<DocumentChunk> SplitChunk(DocumentChunk chunk, ChunkOptions options)
+    private static List<DocumentChunk> SplitChunk(DocumentChunk chunk, ChunkOptions options)
     {
         var profile = GetLanguageProfile(chunk);
         var content = chunk.Content;
@@ -314,7 +314,7 @@ public sealed class ChunkBalancer : IChunkBalancer
         return result;
     }
 
-    private List<int> FindSplitPoints(
+    private static List<int> FindSplitPoints(
         string content,
         ChunkOptions options,
         ILanguageProfile profile)
@@ -364,7 +364,7 @@ public sealed class ChunkBalancer : IChunkBalancer
         return optimizedPoints;
     }
 
-    private List<DocumentChunk> SplitByTokens(
+    private static List<DocumentChunk> SplitByTokens(
         DocumentChunk chunk,
         ChunkOptions options,
         ILanguageProfile profile)
@@ -505,7 +505,7 @@ public sealed class ChunkBalancer : IChunkBalancer
         };
     }
 
-    private static IReadOnlyList<DocumentChunk> ReindexChunks(List<DocumentChunk> chunks)
+    private static List<DocumentChunk> ReindexChunks(List<DocumentChunk> chunks)
     {
         for (int i = 0; i < chunks.Count; i++)
         {

@@ -49,10 +49,10 @@ public sealed class FluxCurator : IFluxCurator
     private ChunkOptions _chunkOptions = ChunkOptions.Default;
     private PIIMaskingOptions _piiOptions = PIIMaskingOptions.Default;
     private ContentFilterOptions _filterOptions = ContentFilterOptions.Default;
-    private IPIIMasker? _piiMasker;
-    private IContentFilterManager? _filterManager;
+    private PIIMasker? _piiMasker;
+    private ContentFilterManager? _filterManager;
     private TextRefineOptions? _refineOptions;
-    private readonly ITextRefiner _refiner = TextRefiner.Instance;
+    private readonly TextRefiner _refiner = TextRefiner.Instance;
     private readonly Dictionary<ChunkingStrategy, IChunker> _chunkers = new();
 
     /// <summary>
@@ -342,7 +342,7 @@ public sealed class FluxCurator : IFluxCurator
     /// <inheritdoc />
     public string DetectLanguage(string text)
     {
-        return LanguageProfileRegistry.Instance.DetectLanguage(text);
+        return LanguageProfileRegistry.DetectLanguage(text);
     }
 
     /// <inheritdoc />
@@ -546,7 +546,7 @@ public sealed class FluxCurator : IFluxCurator
         }
     }
 
-    private ChunkingStrategy ResolveStrategy(string text, ChunkOptions options)
+    private static ChunkingStrategy ResolveStrategy(string text, ChunkOptions options)
     {
         if (options.Strategy != ChunkingStrategy.Auto)
             return options.Strategy;

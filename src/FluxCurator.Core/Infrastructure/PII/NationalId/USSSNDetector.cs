@@ -45,9 +45,9 @@ public sealed class USSSNDetector : NationalIdDetectorBase
         if (!normalized.All(char.IsDigit))
             return false;
 
-        var area = int.Parse(normalized[..3]);
-        var group = int.Parse(normalized[3..5]);
-        var serial = int.Parse(normalized[5..9]);
+        var area = int.Parse(normalized[..3], System.Globalization.CultureInfo.InvariantCulture);
+        var group = int.Parse(normalized[3..5], System.Globalization.CultureInfo.InvariantCulture);
+        var serial = int.Parse(normalized[5..9], System.Globalization.CultureInfo.InvariantCulture);
 
         // Area number validation
         // Cannot be 000, 666, or 900-999

@@ -1,0 +1,13 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/" />
+  <Folder Name="/tests/">
+    <Project Path="tests/FluxCurator.Tests/FluxCurator.Tests.csproj" />
+  </Folder>
+  <Project Path="src/FluxCurator.Core/FluxCurator.Core.csproj" />
+  <Project Path="src/FluxCurator/FluxCurator.csproj" />
+</Solution>

@@ -150,7 +150,7 @@ public sealed class RuleBasedFilter : IContentFilter
     /// <summary>
     /// Applies filtering to the text based on detected matches.
     /// </summary>
-    private string ApplyFiltering(string text, IReadOnlyList<ContentMatch> matches)
+    private string ApplyFiltering(string text, List<ContentMatch> matches)
     {
         if (matches.Count == 0)
             return text;

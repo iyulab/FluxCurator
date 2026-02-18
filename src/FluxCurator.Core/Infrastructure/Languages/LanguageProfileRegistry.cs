@@ -76,7 +76,7 @@ public sealed class LanguageProfileRegistry
     /// </summary>
     /// <param name="text">The text to analyze.</param>
     /// <returns>ISO 639-1 language code.</returns>
-    public string DetectLanguage(string text)
+    public static string DetectLanguage(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
             return "en";

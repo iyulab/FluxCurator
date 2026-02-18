@@ -132,7 +132,7 @@ public sealed class TokenChunker : ChunkerBase
     /// <summary>
     /// Finds the optimal end position for a chunk.
     /// </summary>
-    private int FindTargetEndPosition(
+    private static int FindTargetEndPosition(
         string text,
         int startPosition,
         int targetTokens,

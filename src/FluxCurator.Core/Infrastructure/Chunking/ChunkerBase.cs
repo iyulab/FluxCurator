@@ -145,7 +145,7 @@ public abstract class ChunkerBase : IChunker
     /// <summary>
     /// Extracts overlap content from the end of a chunk.
     /// </summary>
-    protected string? ExtractOverlapContent(string previousChunk, int overlapSize, ILanguageProfile profile)
+    protected static string? ExtractOverlapContent(string previousChunk, int overlapSize, ILanguageProfile profile)
     {
         if (overlapSize <= 0 || string.IsNullOrEmpty(previousChunk))
             return null;
