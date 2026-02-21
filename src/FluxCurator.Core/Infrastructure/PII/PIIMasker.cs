@@ -12,7 +12,7 @@ using FluxCurator.Core.Infrastructure.PII.NationalId;
 /// </summary>
 public sealed class PIIMasker : IPIIMasker
 {
-    private readonly Dictionary<PIIType, IPIIDetector> _detectors = new();
+    private readonly Dictionary<PIIType, List<IPIIDetector>> _detectors = new();
     private readonly INationalIdRegistry _nationalIdRegistry;
 
     /// <summary>
@@ -46,7 +46,12 @@ public sealed class PIIMasker : IPIIMasker
     public void RegisterDetector(IPIIDetector detector)
     {
         ArgumentNullException.ThrowIfNull(detector);
-        _detectors[detector.PIIType] = detector;
+        if (!_detectors.TryGetValue(detector.PIIType, out var list))
+        {
+            list = [];
+            _detectors[detector.PIIType] = list;
+        }
+        list.Add(detector);
     }
 
     /// <inheritdoc/>
@@ -57,20 +62,23 @@ public sealed class PIIMasker : IPIIMasker
 
         var allMatches = new List<PIIMatch>();
 
-        foreach (var (type, detector) in _detectors)
+        foreach (var (type, detectors) in _detectors)
         {
             // Skip if this type is not in the mask list
             if (!Options.TypesToMask.HasFlag(type))
                 continue;
 
-            var matches = detector.Detect(text);
-
-            // Filter by confidence threshold
-            foreach (var match in matches)
+            foreach (var detector in detectors)
             {
-                if (match.Confidence >= Options.MinConfidence)
+                var matches = detector.Detect(text);
+
+                // Filter by confidence threshold
+                foreach (var match in matches)
                 {
-                    allMatches.Add(match);
+                    if (match.Confidence >= Options.MinConfidence)
+                    {
+                        allMatches.Add(match);
+                    }
                 }
             }
         }
@@ -85,13 +93,16 @@ public sealed class PIIMasker : IPIIMasker
         if (string.IsNullOrEmpty(text))
             return false;
 
-        foreach (var (type, detector) in _detectors)
+        foreach (var (type, detectors) in _detectors)
         {
             if (!Options.TypesToMask.HasFlag(type))
                 continue;
 
-            if (detector.ContainsPII(text))
-                return true;
+            foreach (var detector in detectors)
+            {
+                if (detector.ContainsPII(text))
+                    return true;
+            }
         }
 
         return false;

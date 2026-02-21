@@ -587,12 +587,14 @@ public class PIIMaskerTests
     #region Language Configuration
 
     [Fact]
-    public void Masker_WithAutoLanguage_DetectsNationalIds()
+    public void Masker_WithAutoLanguage_DetectsKoreanNationalId()
     {
         // "auto" should register all national ID detectors
+        // Use NationalId-only mask to avoid overlap with Phone detector
         var options = new PIIMaskingOptions
         {
-            LanguageCodes = ["auto"]
+            LanguageCodes = ["auto"],
+            TypesToMask = PIIType.NationalId
         };
         var masker = new PIIMasker(options);
 
@@ -600,6 +602,43 @@ public class PIIMaskerTests
         var result = masker.Mask("ID: 900101-1234567");
 
         Assert.True(result.HasPII);
+        Assert.Contains(result.Matches, m => m.Type == PIIType.NationalId);
+    }
+
+    [Fact]
+    public void Masker_WithAutoLanguage_DetectsUSNationalId()
+    {
+        var options = new PIIMaskingOptions
+        {
+            LanguageCodes = ["auto"],
+            TypesToMask = PIIType.NationalId
+        };
+        var masker = new PIIMasker(options);
+
+        // US SSN pattern (valid, non-sequential)
+        var result = masker.Mask("SSN: 234-56-7890");
+
+        Assert.True(result.HasPII);
+        Assert.Contains(result.Matches, m => m.Type == PIIType.NationalId);
+    }
+
+    [Fact]
+    public void Masker_WithAutoLanguage_DetectsMultipleCountryNationalIds()
+    {
+        var options = new PIIMaskingOptions
+        {
+            LanguageCodes = ["auto"],
+            TypesToMask = PIIType.NationalId
+        };
+        var masker = new PIIMasker(options);
+
+        // Both Korean RRN and US SSN in same text
+        var text = "Korean ID: 900101-1234567, US SSN: 234-56-7890";
+        var matches = masker.Detect(text);
+
+        var nationalIdMatches = matches.Where(m => m.Type == PIIType.NationalId).ToList();
+        Assert.True(nationalIdMatches.Count >= 2,
+            $"Expected at least 2 NationalId matches but got {nationalIdMatches.Count}");
     }
 
     [Fact]
