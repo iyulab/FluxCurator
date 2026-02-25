@@ -80,17 +80,16 @@ public class PhoneDetectorTests
     [Theory]
     [InlineData("1588-1234")]   // Customer service (8 digits)
     [InlineData("1544-9876")]   // Customer service (8 digits)
-    public void Detect_KoreanSpecial8Digit_NotDetected_KnownLimitation(string phone)
+    [InlineData("1600-1234")]   // Customer service (8 digits)
+    public void Detect_KoreanSpecial8Digit_Detected(string phone)
     {
-        // BUG: ValidateMatch rejects normalized.Length < 9, but Korean special
-        // numbers (1588-xxxx, 1544-xxxx) are only 8 digits after normalization.
-        // The regex matches them but validation fails.
         var text = $"Call {phone}";
 
         var matches = _detector.Detect(text);
 
-        // Current behavior: rejected by length check
-        Assert.Empty(matches);
+        Assert.Single(matches);
+        Assert.Equal(PIIType.Phone, matches[0].Type);
+        Assert.True(matches[0].Confidence >= 0.9f);
     }
 
     [Fact]

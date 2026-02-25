@@ -201,10 +201,17 @@ public class KoreaRRNDetectorTests
     }
 
     [Fact]
-    public void GetGender_NullInput_ThrowsNullReference()
+    public void GetGender_NullInput_ReturnsNull()
     {
-        // BUG: NormalizeValue doesn't handle null — throws NullReferenceException
-        Assert.ThrowsAny<Exception>(() => KoreaRRNDetector.GetGender(null!));
+        // NormalizeValue now handles null — returns empty string, length != 13 → null
+        Assert.Null(KoreaRRNDetector.GetGender(null!));
+    }
+
+    [Fact]
+    public void GetBirthYear_NullInput_ReturnsNull()
+    {
+        // NormalizeValue now handles null — returns empty string, length != 13 → null
+        Assert.Null(KoreaRRNDetector.GetBirthYear(null!));
     }
 
     #endregion

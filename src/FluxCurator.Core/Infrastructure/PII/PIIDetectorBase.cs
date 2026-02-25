@@ -84,6 +84,9 @@ public abstract class PIIDetectorBase : IPIIDetector
     /// </summary>
     protected static string NormalizeValue(string value)
     {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
         return value.Replace("-", "")
                     .Replace(" ", "")
                     .Replace(".", "")

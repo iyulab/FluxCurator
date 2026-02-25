@@ -41,8 +41,8 @@ public sealed class PhoneDetector : PIIDetectorBase
 
         var normalized = NormalizeValue(value);
 
-        // Check minimum length (Korean mobile minimum: 10 digits)
-        if (normalized.Length < 9)
+        // Check minimum length (Korean special numbers are 8 digits, e.g. 1588-1234)
+        if (normalized.Length < 8)
             return false;
 
         // Check maximum length
