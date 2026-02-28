@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
     /// <remarks>
     /// Registers:
     /// - IChunkerFactory (as singleton)
-    /// - FluxCurator (as transient)
+    /// - IFluxCurator (as transient)
     ///
     /// If an IEmbedder is already registered, it will be used for semantic chunking.
     /// To enable semantic chunking, register an IEmbedder implementation before calling this method:
@@ -57,8 +57,8 @@ public static class ServiceCollectionExtensions
             return new ChunkerFactory(embedder);
         });
 
-        // Register FluxCurator as transient (each request gets new instance)
-        services.TryAddTransient(sp =>
+        // Register FluxCurator via IFluxCurator interface (each request gets new instance)
+        services.TryAdd(new ServiceDescriptor(typeof(global::FluxCurator.Core.IFluxCurator), sp =>
         {
             var curator = new FluxCurator();
 
@@ -94,7 +94,7 @@ public static class ServiceCollectionExtensions
             }
 
             return curator;
-        });
+        }, ServiceLifetime.Transient));
 
         return services;
     }
