@@ -81,8 +81,8 @@ public sealed class FranceINSEEDetector : NationalIdDetectorBase
         // Validate check digits (Modulo-97)
         if (!ValidateCheckDigits(normalized))
         {
-            // Format valid but checksum fails
-            confidence = 0.7f;
+            // Format valid but checksum fails - still PII
+            confidence = 0.85f;
             return true; // Still consider it PII
         }
 

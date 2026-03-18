@@ -56,7 +56,7 @@ public sealed class BrazilCPFDetector : NationalIdDetectorBase
         var firstCheckDigit = CalculateFirstCheckDigit(normalized);
         if (firstCheckDigit != (normalized[9] - '0'))
         {
-            confidence = 0.6f;
+            confidence = 0.85f;
             return true; // Still consider it PII
         }
 
@@ -64,7 +64,7 @@ public sealed class BrazilCPFDetector : NationalIdDetectorBase
         var secondCheckDigit = CalculateSecondCheckDigit(normalized);
         if (secondCheckDigit != (normalized[10] - '0'))
         {
-            confidence = 0.7f;
+            confidence = 0.85f;
             return true; // Still consider it PII
         }
 

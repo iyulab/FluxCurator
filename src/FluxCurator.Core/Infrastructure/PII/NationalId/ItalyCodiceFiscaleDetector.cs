@@ -147,7 +147,7 @@ public sealed class ItalyCodiceFiscaleDetector : NationalIdDetectorBase
         // Validate check character
         if (!ValidateCheckCharacter(normalized))
         {
-            confidence = 0.7f;
+            confidence = 0.85f;
             return true; // Still consider it PII
         }
 

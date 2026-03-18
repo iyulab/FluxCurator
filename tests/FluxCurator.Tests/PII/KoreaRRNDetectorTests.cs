@@ -61,7 +61,7 @@ public class KoreaRRNDetectorTests
         // Either way, if date is valid and format correct, should be detected
         Assert.Single(matches);
         Assert.Equal(PIIType.NationalId, matches[0].Type);
-        Assert.True(matches[0].Confidence >= 0.7f);
+        Assert.True(matches[0].Confidence >= 0.85f);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class KoreaRRNDetectorTests
         var matches = _detector.Detect(text);
 
         Assert.Single(matches);
-        Assert.True(matches[0].Confidence >= 0.7f);
+        Assert.True(matches[0].Confidence >= 0.85f);
     }
 
     #endregion

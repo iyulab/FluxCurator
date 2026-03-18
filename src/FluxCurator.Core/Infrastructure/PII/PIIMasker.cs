@@ -181,13 +181,17 @@ public sealed class PIIMasker : IPIIMasker
         if (matches.Count <= 1)
             return matches;
 
-        // Sort by start position, then by length (prefer longer matches)
+        // Sort by start position, then by length (prefer longer matches),
+        // then by confidence (prefer higher confidence as tiebreaker)
         matches.Sort((a, b) =>
         {
             var posCompare = a.StartIndex.CompareTo(b.StartIndex);
             if (posCompare != 0)
                 return posCompare;
-            return b.Length.CompareTo(a.Length); // Longer first
+            var lenCompare = b.Length.CompareTo(a.Length); // Longer first
+            if (lenCompare != 0)
+                return lenCompare;
+            return b.Confidence.CompareTo(a.Confidence); // Higher confidence first
         });
 
         var result = new List<PIIMatch>();

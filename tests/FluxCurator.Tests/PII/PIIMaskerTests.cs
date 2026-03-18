@@ -584,6 +584,102 @@ public class PIIMaskerTests
 
     #endregion
 
+    #region NationalId vs Phone Collision
+
+    [Fact]
+    public void Mask_KoreanRRN_WithInvalidChecksum_ShouldNotLeakDigits()
+    {
+        // 901215-1234567 has valid date + gender digit but invalid checksum
+        // Must be fully masked as NationalId, not partially matched as Phone
+        var options = PIIMaskingOptions.ForLanguage("ko");
+        var masker = new PIIMasker(options);
+
+        var result = masker.Mask("주민번호: 901215-1234567");
+
+        Assert.True(result.HasPII);
+        Assert.DoesNotContain("567", result.MaskedText);
+        Assert.Contains(result.Matches, m => m.Type == PIIType.NationalId);
+    }
+
+    [Fact]
+    public void Mask_KoreanRRN_InvalidChecksum_FullyMaskedAsNationalId()
+    {
+        // Even with invalid checksum, the full 13-digit pattern should be captured
+        var options = new PIIMaskingOptions
+        {
+            LanguageCodes = ["ko"],
+            Strategy = MaskingStrategy.Token
+        };
+        var masker = new PIIMasker(options);
+
+        var result = masker.Mask("ID: 901215-1234567");
+
+        Assert.True(result.HasPII);
+        // Should be [NATIONAL_ID], not [PHONE]567
+        Assert.Contains("[NATIONAL_ID]", result.MaskedText);
+        Assert.DoesNotContain("[PHONE]", result.MaskedText);
+    }
+
+    [Fact]
+    public void Detect_KoreanRRN_InvalidChecksum_ConfidenceAboveMinDefault()
+    {
+        // Checksum-failed RRN confidence must be >= default MinConfidence (0.8)
+        var options = PIIMaskingOptions.ForLanguage("ko");
+        var masker = new PIIMasker(options);
+
+        var matches = masker.Detect("901215-1234567");
+
+        var nationalIdMatch = matches.FirstOrDefault(m => m.Type == PIIType.NationalId);
+        Assert.NotNull(nationalIdMatch);
+        Assert.True(nationalIdMatch.Confidence >= 0.8f,
+            $"Expected confidence >= 0.8 but got {nationalIdMatch.Confidence}");
+    }
+
+    [Fact]
+    public void Mask_KoreanRRN_ValidChecksum_FullyMasked()
+    {
+        // Valid RRN should also be fully masked (higher confidence path)
+        var options = new PIIMaskingOptions
+        {
+            LanguageCodes = ["ko"],
+            Strategy = MaskingStrategy.Token
+        };
+        var masker = new PIIMasker(options);
+
+        // 900101-1234567 — valid date, may have valid or invalid checksum
+        var result = masker.Mask("ID: 900101-1234567");
+
+        Assert.True(result.HasPII);
+        Assert.Contains("[NATIONAL_ID]", result.MaskedText);
+        Assert.DoesNotContain("[PHONE]", result.MaskedText);
+    }
+
+    [Fact]
+    public void ResolveOverlaps_LongerMatchWins_WhenSameStartPosition()
+    {
+        // Both NationalId and Phone could match at the same position
+        // The longer match (RRN: 14 chars) should win over shorter (Phone: 11 chars)
+        var options = new PIIMaskingOptions
+        {
+            LanguageCodes = ["auto"],
+            Strategy = MaskingStrategy.Token
+        };
+        var masker = new PIIMasker(options);
+
+        var result = masker.Mask("901215-1234567");
+
+        // NationalId match is longer than Phone match — should win
+        if (result.HasPII)
+        {
+            // No residual digits should be exposed
+            var maskedText = result.MaskedText;
+            Assert.False(maskedText.Contains("567") && maskedText.Contains("[PHONE]"),
+                "Phone pattern should not partially match a Korean RRN, leaking digits");
+        }
+    }
+
+    #endregion
+
     #region Language Configuration
 
     [Fact]
