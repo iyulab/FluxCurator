@@ -10,7 +10,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Version>0.7.3</Version>
+    <Version>0.7.4</Version>
   </PropertyGroup>
 
   <PropertyGroup>
