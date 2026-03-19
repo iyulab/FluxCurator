@@ -94,8 +94,10 @@ public sealed class GermanyIdDetector : NationalIdDetectorBase
         // Validate check digit
         if (!ValidateSteuerIDCheckDigit(id))
         {
-            confidence = 0.6f;
-            return true; // Still consider it PII
+            // Check digit fails but format/structure valid — still PII
+            // Must be >= MinConfidence(0.8) to avoid being filtered out
+            confidence = 0.85f;
+            return true;
         }
 
         confidence = 0.92f;

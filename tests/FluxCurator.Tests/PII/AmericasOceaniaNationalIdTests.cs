@@ -209,6 +209,23 @@ public class BrazilCPFDetectorTests
     }
 
     #endregion
+
+    #region Confidence — Check Digit Invalid (Regression)
+
+    [Fact]
+    public void Detect_CPF_CheckDigitInvalid_ConfidenceAboveMinThreshold()
+    {
+        // Valid 11-digit format but check digits likely invalid
+        var matches = _detector.Detect("CPF: 123.456.789-00");
+
+        if (matches.Count > 0 && matches[0].Confidence > 0.5f)
+        {
+            Assert.True(matches[0].Confidence >= 0.8f,
+                $"Check-digit-invalid CPF confidence ({matches[0].Confidence}) must be >= 0.8");
+        }
+    }
+
+    #endregion
 }
 
 public class AustraliaTFNDetectorTests

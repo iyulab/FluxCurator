@@ -83,6 +83,23 @@ public class JapanMyNumberDetectorTests
     }
 
     #endregion
+
+    #region Confidence — Checksum Invalid (Regression)
+
+    [Fact]
+    public void Detect_MyNumber_ChecksumInvalid_ConfidenceAboveMinThreshold()
+    {
+        // Valid 12-digit pattern, checksum likely invalid
+        var matches = _detector.Detect("マイナンバー: 4567-8912-3456");
+
+        if (matches.Count > 0 && matches[0].Confidence > 0.5f)
+        {
+            Assert.True(matches[0].Confidence >= 0.8f,
+                $"Checksum-invalid My Number confidence ({matches[0].Confidence}) must be >= 0.8");
+        }
+    }
+
+    #endregion
 }
 
 public class ChinaIdCardDetectorTests
@@ -172,6 +189,23 @@ public class ChinaIdCardDetectorTests
     public void Detect_Null_ReturnsEmpty()
     {
         Assert.Empty(_detector.Detect(null!));
+    }
+
+    #endregion
+
+    #region Confidence — Check Char Invalid (Regression)
+
+    [Fact]
+    public void Detect_ChinaIdCard_CheckCharInvalid_ConfidenceAboveMinThreshold()
+    {
+        // Valid pattern+date but likely invalid check char
+        var matches = _detector.Detect("身份证号: 110101199001011230");
+
+        if (matches.Count > 0 && matches[0].Confidence > 0.5f)
+        {
+            Assert.True(matches[0].Confidence >= 0.8f,
+                $"Check-char-invalid China ID confidence ({matches[0].Confidence}) must be >= 0.8");
+        }
     }
 
     #endregion

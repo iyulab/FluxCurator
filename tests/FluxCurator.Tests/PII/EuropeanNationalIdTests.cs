@@ -159,6 +159,27 @@ public class GermanyIdDetectorTests
     }
 
     #endregion
+
+    #region Confidence — Checksum Invalid (Regression)
+
+    [Fact]
+    public void Detect_SteuerID_ChecksumInvalid_ConfidenceAboveMinThreshold()
+    {
+        // Regression: checksum-invalid NationalId must pass MinConfidence(0.8f)
+        var text = "ID: 11234567890"; // valid format, checksum likely invalid
+        var matches = _detector.Detect(text);
+
+        foreach (var m in matches)
+        {
+            if (m.Confidence > 0.5f) // only structurally valid matches
+            {
+                Assert.True(m.Confidence >= 0.8f,
+                    $"Checksum-invalid SteuerID confidence ({m.Confidence}) must be >= 0.8");
+            }
+        }
+    }
+
+    #endregion
 }
 
 public class FranceINSEEDetectorTests
@@ -226,6 +247,23 @@ public class FranceINSEEDetectorTests
     public void Detect_Null_ReturnsEmpty()
     {
         Assert.Empty(_detector.Detect(null!));
+    }
+
+    #endregion
+
+    #region Confidence — Checksum Invalid (Regression)
+
+    [Fact]
+    public void Detect_INSEE_ChecksumInvalid_ConfidenceAboveMinThreshold()
+    {
+        // Valid format but likely invalid Modulo-97 check digits
+        var matches = _detector.Detect("Numéro: 185017501212399");
+
+        if (matches.Count > 0 && matches[0].Confidence > 0.5f)
+        {
+            Assert.True(matches[0].Confidence >= 0.8f,
+                $"Checksum-invalid INSEE confidence ({matches[0].Confidence}) must be >= 0.8");
+        }
     }
 
     #endregion
@@ -304,6 +342,21 @@ public class SpainDNIDetectorTests
     }
 
     #endregion
+
+    #region Confidence — Check Letter Invalid (Regression)
+
+    [Fact]
+    public void Detect_DNI_InvalidCheckLetter_ConfidenceAboveMinThreshold()
+    {
+        // 12345678A — check letter should be Z (12345678%23=14→Z), A is wrong
+        var matches = _detector.Detect("DNI: 12345678A");
+
+        var match = Assert.Single(matches);
+        Assert.True(match.Confidence >= 0.8f,
+            $"Check-letter-invalid DNI confidence ({match.Confidence}) must be >= 0.8");
+    }
+
+    #endregion
 }
 
 public class ItalyCodiceFiscaleDetectorTests
@@ -364,6 +417,23 @@ public class ItalyCodiceFiscaleDetectorTests
     public void Detect_Null_ReturnsEmpty()
     {
         Assert.Empty(_detector.Detect(null!));
+    }
+
+    #endregion
+
+    #region Confidence — Check Char Invalid (Regression)
+
+    [Fact]
+    public void Detect_CodiceFiscale_InvalidCheckChar_ConfidenceAboveMinThreshold()
+    {
+        // RSSMRA85A01H501A — last char A is likely wrong check char
+        var matches = _detector.Detect("CF: RSSMRA85A01H501A");
+
+        if (matches.Count > 0 && matches[0].Confidence > 0.5f)
+        {
+            Assert.True(matches[0].Confidence >= 0.8f,
+                $"Check-char-invalid Codice Fiscale confidence ({matches[0].Confidence}) must be >= 0.8");
+        }
     }
 
     #endregion

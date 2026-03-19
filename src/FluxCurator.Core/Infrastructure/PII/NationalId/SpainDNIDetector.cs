@@ -63,9 +63,10 @@ public sealed class SpainDNIDetector : NationalIdDetectorBase
         // Validate check letter
         if (!ValidateCheckLetter(normalized, isNIE))
         {
-            // Format valid but check letter wrong
-            confidence = 0.6f;
-            return true; // Still consider it PII
+            // Format valid but check letter wrong — still PII
+            // Must be >= MinConfidence(0.8) to avoid being filtered out
+            confidence = 0.85f;
+            return true;
         }
 
         // All validations passed

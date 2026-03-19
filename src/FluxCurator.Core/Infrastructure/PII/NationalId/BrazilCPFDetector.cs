@@ -56,16 +56,19 @@ public sealed class BrazilCPFDetector : NationalIdDetectorBase
         var firstCheckDigit = CalculateFirstCheckDigit(normalized);
         if (firstCheckDigit != (normalized[9] - '0'))
         {
-            confidence = 0.6f;
-            return true; // Still consider it PII
+            // First check digit fails but format valid — still PII
+            // Must be >= MinConfidence(0.8) to avoid being filtered out
+            confidence = 0.85f;
+            return true;
         }
 
         // Validate second check digit
         var secondCheckDigit = CalculateSecondCheckDigit(normalized);
         if (secondCheckDigit != (normalized[10] - '0'))
         {
-            confidence = 0.7f;
-            return true; // Still consider it PII
+            // Second check digit fails but format valid — still PII
+            confidence = 0.85f;
+            return true;
         }
 
         // All validations passed

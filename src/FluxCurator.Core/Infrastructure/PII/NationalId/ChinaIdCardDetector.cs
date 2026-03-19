@@ -77,9 +77,10 @@ public sealed class ChinaIdCardDetector : NationalIdDetectorBase
         // Validate check character
         if (!ValidateCheckCharacter(normalized))
         {
-            // Pattern and date valid but checksum fails
-            confidence = 0.7f;
-            return true; // Still consider it PII
+            // Pattern and date valid but checksum fails — still PII
+            // Must be >= MinConfidence(0.8) to avoid being filtered out
+            confidence = 0.85f;
+            return true;
         }
 
         // All validations passed

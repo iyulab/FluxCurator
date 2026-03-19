@@ -57,9 +57,10 @@ public sealed class JapanMyNumberDetector : NationalIdDetectorBase
         // Validate check digit
         if (!ValidateCheckDigit(normalized))
         {
-            // Pattern valid but checksum fails
-            confidence = 0.6f;
-            return true; // Still consider it PII
+            // Pattern valid but checksum fails — still PII
+            // Must be >= MinConfidence(0.8) to avoid being filtered out
+            confidence = 0.85f;
+            return true;
         }
 
         // All validations passed
