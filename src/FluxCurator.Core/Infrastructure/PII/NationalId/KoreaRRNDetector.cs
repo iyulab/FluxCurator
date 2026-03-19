@@ -68,8 +68,9 @@ public sealed class KoreaRRNDetector : NationalIdDetectorBase
         if (!ValidateChecksum(normalized))
         {
             // Pattern and date valid but checksum fails
-            // Could be a typo or fake number - still flag it
-            confidence = 0.7f;
+            // Could be a typo or fake number - still flag it as PII
+            // Must be >= MinConfidence(0.8) to prevent Phone detector collision
+            confidence = 0.85f;
             return true; // Still consider it PII even with invalid checksum
         }
 

@@ -652,4 +652,64 @@ public class PIIMaskerTests
     }
 
     #endregion
+
+    #region Korean RRN vs Phone Collision (Regression)
+
+    [Fact]
+    public void Mask_KoreanRRN_WithInvalidChecksum_ShouldNotLeakDigits()
+    {
+        // Regression: 901215-1234567 was masked as [PHONE]567, leaking 3 digits.
+        // RRN (checksum-invalid, confidence=0.85) must win over Phone (US format partial match).
+        var masker = new PIIMasker();
+
+        var result = masker.Mask("주민번호: 901215-1234567");
+
+        Assert.DoesNotContain("567", result.MaskedText);
+        Assert.Contains("[NATIONAL_ID]", result.MaskedText);
+    }
+
+    [Fact]
+    public void Detect_KoreanRRN_WithInvalidChecksum_PreferredOverPhone()
+    {
+        // With default options (Common = Email|Phone|NationalId|CreditCard),
+        // RRN overlap must suppress the shorter Phone match.
+        var masker = new PIIMasker();
+
+        var matches = masker.Detect("901215-1234567");
+
+        var match = Assert.Single(matches);
+        Assert.Equal(PIIType.NationalId, match.Type);
+    }
+
+    [Fact]
+    public void Detect_KoreanRRN_OverlapResolution_LongerMatchWins()
+    {
+        // Overlap resolution must prefer the 14-char RRN match
+        // over the 12-char Phone (US format) partial match.
+        var masker = new PIIMasker();
+
+        var matches = masker.Detect("ID: 901215-1234567 입니다");
+
+        var nationalIdMatch = Assert.Single(matches, m => m.Type == PIIType.NationalId);
+        Assert.Contains("1234567", nationalIdMatch.Value);
+    }
+
+    [Fact]
+    public void Mask_KoreanRRN_ValidChecksum_MaskedAsNationalId()
+    {
+        // Valid checksum RRN (confidence=0.99) should always be [NATIONAL_ID].
+        var options = new PIIMaskingOptions
+        {
+            LanguageCodes = ["ko"],
+            TypesToMask = PIIType.NationalId
+        };
+        var masker = new PIIMasker(options);
+
+        var result = masker.Mask("ID: 860101-1068016");
+
+        Assert.True(result.HasPII);
+        Assert.Contains("[NATIONAL_ID]", result.MaskedText);
+    }
+
+    #endregion
 }

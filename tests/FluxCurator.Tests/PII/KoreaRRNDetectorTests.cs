@@ -268,4 +268,39 @@ public class KoreaRRNDetectorTests
     }
 
     #endregion
+
+    #region Confidence — Checksum Invalid (Regression)
+
+    [Fact]
+    public void Detect_InvalidChecksum_ConfidenceAboveMinThreshold()
+    {
+        // Regression: confidence was 0.7f, below default MinConfidence(0.8f),
+        // causing RRN to be filtered out and Phone detector to partially match.
+        var text = "ID: 901215-1234567";
+
+        var matches = _detector.Detect(text);
+
+        var match = Assert.Single(matches);
+        Assert.True(match.Confidence >= 0.8f,
+            $"Checksum-invalid RRN confidence ({match.Confidence}) must be >= 0.8 to pass MinConfidence");
+    }
+
+    [Fact]
+    public void Detect_ValidChecksum_HighConfidence()
+    {
+        // Compute a valid RRN: 900101-1 + digits where checksum passes.
+        // Weights: 2,3,4,5,6,7,8,9,2,3,4,5
+        // 9*2+0*3+0*4+1*5+0*6+1*7+1*8+0*9+0*2+0*3+0*4+0*5 = 18+5+7+8 = 38
+        // Check: (11 - 38%11)%10 = (11-5)%10 = 6
+        // RRN: 900101-1000006
+        var text = "ID: 900101-1000006";
+
+        var matches = _detector.Detect(text);
+
+        var match = Assert.Single(matches);
+        Assert.True(match.Confidence >= 0.95f,
+            $"Valid checksum RRN confidence ({match.Confidence}) should be >= 0.95");
+    }
+
+    #endregion
 }

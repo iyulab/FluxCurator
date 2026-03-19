@@ -71,20 +71,16 @@ public sealed class PIIMasker : IPIIMasker
             foreach (var detector in detectors)
             {
                 var matches = detector.Detect(text);
-
-                // Filter by confidence threshold
-                foreach (var match in matches)
-                {
-                    if (match.Confidence >= Options.MinConfidence)
-                    {
-                        allMatches.Add(match);
-                    }
-                }
+                allMatches.AddRange(matches);
             }
         }
 
-        // Sort by position and remove overlapping matches
-        return ResolveOverlaps(allMatches);
+        // Resolve overlaps FIRST (prefer longer/more specific matches),
+        // then filter by confidence. This prevents shorter partial matches
+        // (e.g. Phone) from leaking digits when a longer match (e.g. NationalId)
+        // covers the same region.
+        var resolved = ResolveOverlaps(allMatches);
+        return resolved.Where(m => m.Confidence >= Options.MinConfidence).ToList();
     }
 
     /// <inheritdoc/>
