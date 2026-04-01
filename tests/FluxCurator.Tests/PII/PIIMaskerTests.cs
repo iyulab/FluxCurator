@@ -712,4 +712,161 @@ public class PIIMaskerTests
     }
 
     #endregion
+
+    #region IP Address Detection
+
+    [Theory]
+    [InlineData("192.168.1.100")]
+    [InlineData("10.0.0.1")]
+    [InlineData("172.16.0.1")]
+    [InlineData("8.8.8.8")]
+    [InlineData("255.255.255.255")]
+    [InlineData("1.2.3.4")]
+    public void Detect_IPv4_ReturnsMatch(string ip)
+    {
+        var options = new PIIMaskingOptions { TypesToMask = PIIType.IPAddress };
+        var masker = new PIIMasker(options);
+
+        var matches = masker.Detect($"from {ip} port 22");
+
+        Assert.Single(matches);
+        Assert.Equal(PIIType.IPAddress, matches[0].Type);
+        Assert.Equal(ip, matches[0].Value);
+    }
+
+    [Theory]
+    [InlineData("2001:0db8:85a3:0000:0000:8a2e:0370:7334")]
+    [InlineData("fe80::1")]
+    [InlineData("::1")]
+    [InlineData("::")]
+    public void Detect_IPv6_ReturnsMatch(string ip)
+    {
+        var options = new PIIMaskingOptions { TypesToMask = PIIType.IPAddress };
+        var masker = new PIIMasker(options);
+
+        var matches = masker.Detect($"from {ip} port 22");
+
+        Assert.Single(matches);
+        Assert.Equal(PIIType.IPAddress, matches[0].Type);
+        Assert.Equal(ip, matches[0].Value);
+    }
+
+    [Fact]
+    public void Detect_IPv4_InSyslog_ReturnsMatch()
+    {
+        var options = new PIIMaskingOptions { TypesToMask = PIIType.IPAddress };
+        var masker = new PIIMasker(options);
+
+        var text = "Mar 26 10:15:23 server01 sshd[12345]: Failed password for root from 192.168.1.100 port 22";
+        var matches = masker.Detect(text);
+
+        Assert.Single(matches);
+        Assert.Equal("192.168.1.100", matches[0].Value);
+    }
+
+    [Fact]
+    public void Detect_IPv4_ZeroAddress_NotDetected()
+    {
+        var options = new PIIMaskingOptions { TypesToMask = PIIType.IPAddress };
+        var masker = new PIIMasker(options);
+
+        var matches = masker.Detect("bind 0.0.0.0 port 80");
+
+        Assert.Empty(matches);
+    }
+
+    [Fact]
+    public void Mask_IPv4_TokenStrategy_ReplacesWithIPToken()
+    {
+        var options = new PIIMaskingOptions
+        {
+            TypesToMask = PIIType.IPAddress,
+            Strategy = MaskingStrategy.Token
+        };
+        var masker = new PIIMasker(options);
+
+        var result = masker.Mask("Failed password from 192.168.1.100 port 22");
+
+        Assert.True(result.HasPII);
+        Assert.Contains("[IP]", result.MaskedText);
+        Assert.DoesNotContain("192.168.1.100", result.MaskedText);
+    }
+
+    [Fact]
+    public void Mask_IPv4_PartialStrategy_ShowsFirstOctet()
+    {
+        var options = new PIIMaskingOptions
+        {
+            TypesToMask = PIIType.IPAddress,
+            Strategy = MaskingStrategy.Partial
+        };
+        var masker = new PIIMasker(options);
+
+        var result = masker.Mask("IP: 192.168.1.100");
+
+        Assert.True(result.HasPII);
+        Assert.Contains("192.***.***.***", result.MaskedText);
+    }
+
+    [Fact]
+    public void Mask_MultipleIPv4_AllMasked()
+    {
+        var options = new PIIMaskingOptions
+        {
+            TypesToMask = PIIType.IPAddress,
+            Strategy = MaskingStrategy.Token
+        };
+        var masker = new PIIMasker(options);
+
+        var result = masker.Mask("src=10.0.0.1 dst=8.8.8.8");
+
+        Assert.Equal(2, result.PIICount);
+        Assert.DoesNotContain("10.0.0.1", result.MaskedText);
+        Assert.DoesNotContain("8.8.8.8", result.MaskedText);
+    }
+
+    [Fact]
+    public void Detect_IPv4_DefaultCommonOptions_NotDetected()
+    {
+        // Default TypesToMask = Common, which does NOT include IPAddress
+        var masker = new PIIMasker();
+
+        var matches = masker.Detect("IP: 192.168.1.100");
+
+        Assert.DoesNotContain(matches, m => m.Type == PIIType.IPAddress);
+    }
+
+    [Fact]
+    public void Detect_IPv4_StrictOptions_Detected()
+    {
+        // Strict includes All types
+        var masker = new PIIMasker(PIIMaskingOptions.Strict);
+
+        var matches = masker.Detect("IP: 192.168.1.100");
+
+        Assert.Contains(matches, m => m.Type == PIIType.IPAddress);
+    }
+
+    [Theory]
+    [InlineData("192.168.1.100", 0.9f)]   // Private
+    [InlineData("10.0.0.1", 0.9f)]         // Private
+    [InlineData("8.8.8.8", 0.95f)]         // Public
+    [InlineData("127.0.0.1", 0.6f)]        // Loopback
+    public void Detect_IPv4_ConfidenceByRange(string ip, float expectedMinConfidence)
+    {
+        var options = new PIIMaskingOptions
+        {
+            TypesToMask = PIIType.IPAddress,
+            MinConfidence = 0.0f // Accept all
+        };
+        var masker = new PIIMasker(options);
+
+        var matches = masker.Detect(ip);
+
+        var match = Assert.Single(matches);
+        Assert.True(match.Confidence >= expectedMinConfidence,
+            $"IP {ip}: expected confidence >= {expectedMinConfidence}, got {match.Confidence}");
+    }
+
+    #endregion
 }

@@ -136,6 +136,7 @@ public sealed class PIIMasker : IPIIMasker
         RegisterDetector(new EmailDetector());
         RegisterDetector(new PhoneDetector());
         RegisterDetector(new CreditCardDetector());
+        RegisterDetector(new IPAddressDetector());
 
         // Register national ID detectors based on language codes
         RegisterNationalIdDetectors();
@@ -322,6 +323,24 @@ public sealed class PIIMasker : IPIIMasker
                         var maskLength = Math.Max(normalized.Length - 6, 0);
                         return normalized[..6] + new string('*', maskLength);
                     }
+                }
+                break;
+
+            case PIIType.IPAddress:
+                // Show first octet only: 192.***.***.***
+                var dotIndex2 = value.IndexOf('.');
+                var colonIndex = value.IndexOf(':');
+                if (dotIndex2 > 0)
+                {
+                    // IPv4: show first octet
+                    var firstOctet = value[..dotIndex2];
+                    return firstOctet + ".***.***.***";
+                }
+                if (colonIndex >= 0)
+                {
+                    // IPv6: show first group
+                    var firstGroup = value[..colonIndex];
+                    return firstGroup + ":****:****:****";
                 }
                 break;
         }
