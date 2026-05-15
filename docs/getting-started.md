@@ -180,7 +180,7 @@ foreach (var detection in result.Detections)
 
 ```csharp
 var curator = new FluxCurator()
-    .WithPIIMasking(PIIMaskingOptions.ForKorean);
+    .WithPIIMasking(PIIMaskingOptions.ForLanguage("ko"));
 
 // Detects and validates Korean RRN (Resident Registration Number)
 var result = curator.MaskPII("RRN: 901231-1234567");

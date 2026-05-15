@@ -140,11 +140,8 @@ services.AddFluxCurator(options =>
     // PII masking configuration
     options.PIIMaskingOptions = new PIIMaskingOptions
     {
-        MaskingStrategy = MaskingStrategy.Token,
-        DetectEmail = true,
-        DetectPhone = true,
-        DetectKoreanRRN = true,
-        DetectCreditCard = true
+        Strategy = MaskingStrategy.Token,
+        TypesToMask = PIIType.Email | PIIType.Phone | PIIType.NationalId | PIIType.CreditCard
     };
 
     // Content filtering configuration
@@ -302,30 +299,30 @@ public class DocumentController : ControllerBase
 ### Mock IChunkerFactory
 
 ```csharp
-using Moq;
+using NSubstitute;
 
 [Fact]
 public async Task ProcessDocument_UsesCorrectStrategy()
 {
     // Arrange
-    var mockChunker = new Mock<IChunker>();
+    var mockChunker = Substitute.For<IChunker>();
     mockChunker
-        .Setup(c => c.ChunkAsync(It.IsAny<string>(), It.IsAny<ChunkOptions>(), default))
-        .ReturnsAsync(new List<DocumentChunk> { new() { Content = "Test" } });
+        .ChunkAsync(Arg.Any<string>(), Arg.Any<ChunkOptions>(), default)
+        .Returns(new List<DocumentChunk> { new() { Content = "Test" } });
 
-    var mockFactory = new Mock<IChunkerFactory>();
+    var mockFactory = Substitute.For<IChunkerFactory>();
     mockFactory
-        .Setup(f => f.CreateChunker(ChunkingStrategy.Sentence))
-        .Returns(mockChunker.Object);
+        .CreateChunker(ChunkingStrategy.Sentence)
+        .Returns(mockChunker);
 
-    var processor = new DocumentProcessor(mockFactory.Object);
+    var processor = new DocumentProcessor(mockFactory);
 
     // Act
     var result = await processor.ProcessAsync("Test text", ChunkingStrategy.Sentence);
 
     // Assert
     Assert.Single(result);
-    mockFactory.Verify(f => f.CreateChunker(ChunkingStrategy.Sentence), Times.Once);
+    mockFactory.Received(1).CreateChunker(ChunkingStrategy.Sentence);
 }
 ```
 
