@@ -53,7 +53,7 @@ var chunks = await curator.ChunkAsync(text);
 
 foreach (var chunk in chunks)
 {
-    Console.WriteLine($"Chunk {chunk.Index + 1}/{chunk.TotalChunks}:");
+    Console.WriteLine($"Chunk {chunk.ChunkIndex + 1}/{chunk.TotalChunks}:");
     Console.WriteLine(chunk.Content);
     Console.WriteLine($"Tokens: ~{chunk.Metadata.EstimatedTokenCount}");
 }
@@ -68,7 +68,7 @@ var curator = new FluxCurator();
 await foreach (var chunk in curator.ChunkStreamAsync(largeText))
 {
     // Process chunks as they are generated
-    Console.WriteLine($"Chunk {chunk.Index}: {chunk.Content.Length} chars");
+    Console.WriteLine($"Chunk {chunk.ChunkIndex}: {chunk.Content.Length} chars");
     await ProcessChunkAsync(chunk);
 }
 ```

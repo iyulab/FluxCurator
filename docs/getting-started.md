@@ -42,7 +42,7 @@ var chunks = await curator.ChunkAsync(text);
 
 foreach (var chunk in chunks)
 {
-    Console.WriteLine($"Chunk {chunk.Index + 1}/{chunk.TotalChunks}:");
+    Console.WriteLine($"Chunk {chunk.ChunkIndex + 1}/{chunk.TotalChunks}:");
     Console.WriteLine(chunk.Content);
     Console.WriteLine($"Tokens: ~{chunk.Metadata.EstimatedTokenCount}");
 }

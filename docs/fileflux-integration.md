@@ -310,7 +310,7 @@ foreach (var chunk in chunks)
 {
     _logger.LogDebug(
         "Chunk {Index}: {Length} chars, pages {Start}-{End}, path: {Path}",
-        chunk.Index,
+        chunk.ChunkIndex,
         chunk.Content.Length,
         chunk.Location.StartPage,
         chunk.Location.EndPage,
