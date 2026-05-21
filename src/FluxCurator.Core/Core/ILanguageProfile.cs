@@ -3,24 +3,10 @@ namespace FluxCurator.Core.Core;
 /// <summary>
 /// Interface for language-specific text processing profiles.
 /// Supports multi-language chunking with proper sentence boundary detection.
+/// Extends <see cref="Flux.Abstractions.ILanguageProfile"/> with FluxCurator-specific members.
 /// </summary>
-public interface ILanguageProfile
+public interface ILanguageProfile : Flux.Abstractions.ILanguageProfile
 {
-    /// <summary>
-    /// Gets the ISO 639-1 language code (e.g., "ko", "en", "ja").
-    /// </summary>
-    string LanguageCode { get; }
-
-    /// <summary>
-    /// Gets the display name of the language.
-    /// </summary>
-    string LanguageName { get; }
-
-    /// <summary>
-    /// Gets the regex pattern for detecting sentence endings.
-    /// </summary>
-    string SentenceEndPattern { get; }
-
     /// <summary>
     /// Gets the regex pattern for detecting section markers and headings.
     /// </summary>
@@ -30,13 +16,6 @@ public interface ILanguageProfile
     /// Gets common abbreviations that should not be treated as sentence endings.
     /// </summary>
     IReadOnlySet<string> Abbreviations { get; }
-
-    /// <summary>
-    /// Finds sentence boundaries in the given text.
-    /// </summary>
-    /// <param name="text">The text to analyze.</param>
-    /// <returns>A list of indices where sentences end.</returns>
-    IReadOnlyList<int> FindSentenceBoundaries(string text);
 
     /// <summary>
     /// Finds paragraph boundaries in the given text.

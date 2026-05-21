@@ -2,8 +2,12 @@
 
   <PropertyGroup>
     <PackageId>FluxCurator.Core</PackageId>
-    <Description>Core library for FluxCurator - Zero dependencies. PII masking, content filtering, and rule-based chunking with Korean language support.</Description>
+    <Description>Core library for FluxCurator - Minimal dependencies. PII masking, content filtering, and rule-based chunking with Korean language support.</Description>
     <PackageTags>rag;chunking;pii;masking;nlp;korean;text-processing;preprocessing</PackageTags>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Flux.Abstractions" />
+  </ItemGroup>
 
 </Project>

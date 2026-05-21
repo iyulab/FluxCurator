@@ -20,7 +20,7 @@ public class SentenceChunkerTests
         // Assert
         Assert.Single(chunks);
         Assert.Equal(text, chunks[0].Content);
-        Assert.Equal(0, chunks[0].Index);
+        Assert.Equal(0, chunks[0].ChunkIndex);
         Assert.Equal(1, chunks[0].TotalChunks);
     }
 

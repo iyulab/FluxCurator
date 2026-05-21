@@ -18,7 +18,7 @@ public sealed class DocumentChunk
     /// <summary>
     /// Gets or sets the zero-based index of this chunk within the document.
     /// </summary>
-    public int Index { get; set; }
+    public int ChunkIndex { get; set; }
 
     /// <summary>
     /// Gets or sets the total number of chunks in the document.
@@ -58,7 +58,7 @@ public sealed class DocumentChunk
         return new DocumentChunk
         {
             Content = content,
-            Index = index,
+            ChunkIndex = index,
             TotalChunks = totalChunks
         };
     }

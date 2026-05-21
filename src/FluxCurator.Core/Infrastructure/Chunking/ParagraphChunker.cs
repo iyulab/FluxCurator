@@ -98,7 +98,7 @@ public sealed class ParagraphChunker : ChunkerBase
         // Update total chunk count and indices
         for (int i = 0; i < chunks.Count; i++)
         {
-            chunks[i].Index = i;
+            chunks[i].ChunkIndex = i;
             chunks[i].TotalChunks = chunks.Count;
         }
 

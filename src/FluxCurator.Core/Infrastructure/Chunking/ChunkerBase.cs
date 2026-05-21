@@ -58,7 +58,7 @@ public abstract class ChunkerBase : IChunker
         var chunk = new DocumentChunk
         {
             Content = options.TrimWhitespace ? content.Trim() : content,
-            Index = index,
+            ChunkIndex = index,
             TotalChunks = totalChunks,
             Location = new ChunkLocation
             {

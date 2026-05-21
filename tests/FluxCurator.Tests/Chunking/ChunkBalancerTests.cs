@@ -181,7 +181,7 @@ public class ChunkBalancerTests
         // Verify indices are correct
         for (int i = 0; i < result.Count; i++)
         {
-            Assert.Equal(i, result[i].Index);
+            Assert.Equal(i, result[i].ChunkIndex);
             Assert.Equal(result.Count, result[i].TotalChunks);
         }
     }
@@ -270,7 +270,7 @@ public class ChunkBalancerTests
         // Check indices are sequential
         for (int i = 0; i < result.Count; i++)
         {
-            Assert.Equal(i, result[i].Index);
+            Assert.Equal(i, result[i].ChunkIndex);
         }
     }
 
@@ -302,7 +302,7 @@ public class ChunkBalancerTests
         // Assert
         for (int i = 0; i < result.Count; i++)
         {
-            Assert.Equal(i, result[i].Index);
+            Assert.Equal(i, result[i].ChunkIndex);
             Assert.Equal(result.Count, result[i].TotalChunks);
         }
     }
@@ -381,7 +381,7 @@ public class ChunkBalancerTests
         // Verify balancing was applied (indices should be sequential)
         for (int i = 0; i < chunks.Count; i++)
         {
-            Assert.Equal(i, chunks[i].Index);
+            Assert.Equal(i, chunks[i].ChunkIndex);
             Assert.Equal(chunks.Count, chunks[i].TotalChunks);
         }
     }
@@ -415,7 +415,7 @@ public class ChunkBalancerTests
         return new DocumentChunk
         {
             Content = content,
-            Index = index,
+            ChunkIndex = index,
             TotalChunks = totalChunks,
             Location = new ChunkLocation
             {
