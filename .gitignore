@@ -367,3 +367,6 @@ FodyWeavers.xsd
 local-docs/
 claudedocs/
 CLAUDE.md
+
+# IDE language server cache
+*.lscache
