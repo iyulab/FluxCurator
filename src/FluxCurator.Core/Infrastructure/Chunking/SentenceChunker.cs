@@ -29,6 +29,10 @@ public sealed class SentenceChunker : ChunkerBase
         var chunks = new List<DocumentChunk>();
 
         int currentStart = 0;
+        // Document offset where the current chunk's own (non-overlap) content begins.
+        // The buffer may have overlap prepended, so "end - buffer.Length" is NOT the chunk's
+        // document start (it shifts StartPosition left by the overlap length).
+        int chunkDocStart = 0;
         var currentChunkContent = new System.Text.StringBuilder();
         int currentTokenCount = 0;
         string? overlapContent = null;
@@ -54,7 +58,7 @@ public sealed class SentenceChunker : ChunkerBase
                         content: chunkText,
                         index: chunks.Count,
                         totalChunks: 0, // Will update later
-                        startPosition: currentStart - currentChunkContent.Length,
+                        startPosition: chunkDocStart,
                         endPosition: currentStart,
                         profile: profile,
                         options: options,
@@ -73,6 +77,7 @@ public sealed class SentenceChunker : ChunkerBase
                 // Start new chunk
                 currentChunkContent.Clear();
                 currentTokenCount = 0;
+                chunkDocStart = currentStart;
 
                 // Add overlap to new chunk if needed
                 if (!string.IsNullOrEmpty(overlapContent))
@@ -101,7 +106,7 @@ public sealed class SentenceChunker : ChunkerBase
                     content: chunkText,
                     index: chunks.Count,
                     totalChunks: 0,
-                    startPosition: text.Length - currentChunkContent.Length,
+                    startPosition: chunkDocStart,
                     endPosition: text.Length,
                     profile: profile,
                     options: options,

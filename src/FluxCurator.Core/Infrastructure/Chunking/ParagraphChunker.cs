@@ -29,6 +29,11 @@ public sealed class ParagraphChunker : ChunkerBase
         var chunks = new List<DocumentChunk>();
 
         int currentStart = 0;
+        // Document offset where the current chunk's own (non-overlap) content begins.
+        // The buffer may have overlap text prepended, so "end - buffer.Length" is NOT the
+        // chunk's document start — deriving it that way shifted StartPosition left by the
+        // overlap length and broke offset-based consumers (heading paths, citations).
+        int chunkDocStart = 0;
         var currentChunkContent = new System.Text.StringBuilder();
         int currentTokenCount = 0;
         string? overlapContent = null;
@@ -46,7 +51,7 @@ public sealed class ParagraphChunker : ChunkerBase
                 // If current chunk has content, finalize it first
                 if (currentChunkContent.Length > 0)
                 {
-                    FinalizeChunk(chunks, currentChunkContent, currentStart, profile, options, ref overlapContent);
+                    FinalizeChunk(chunks, currentChunkContent, chunkDocStart, currentStart, profile, options, ref overlapContent);
                     currentChunkContent.Clear();
                     currentTokenCount = 0;
                 }
@@ -59,12 +64,13 @@ public sealed class ParagraphChunker : ChunkerBase
                     options,
                     ref overlapContent);
                 chunks.AddRange(sentenceChunks);
+                chunkDocStart = boundary;
             }
             // Check if adding this paragraph would exceed max size
             else if (currentTokenCount + paragraphTokens > options.MaxChunkSize && currentChunkContent.Length > 0)
             {
                 // Finalize current chunk
-                FinalizeChunk(chunks, currentChunkContent, currentStart, profile, options, ref overlapContent);
+                FinalizeChunk(chunks, currentChunkContent, chunkDocStart, currentStart, profile, options, ref overlapContent);
                 currentChunkContent.Clear();
                 currentTokenCount = 0;
 
@@ -76,12 +82,17 @@ public sealed class ParagraphChunker : ChunkerBase
                 }
 
                 // Add paragraph to new chunk
+                chunkDocStart = currentStart;
                 currentChunkContent.Append(paragraph);
                 currentTokenCount += paragraphTokens;
             }
             else
             {
                 // Add paragraph to current chunk
+                if (currentChunkContent.Length == 0)
+                {
+                    chunkDocStart = currentStart;
+                }
                 currentChunkContent.Append(paragraph);
                 currentTokenCount += paragraphTokens;
             }
@@ -92,7 +103,7 @@ public sealed class ParagraphChunker : ChunkerBase
         // Handle remaining content
         if (currentChunkContent.Length > 0)
         {
-            FinalizeChunk(chunks, currentChunkContent, text.Length, profile, options, ref overlapContent);
+            FinalizeChunk(chunks, currentChunkContent, chunkDocStart, text.Length, profile, options, ref overlapContent);
         }
 
         // Update total chunk count and indices
@@ -134,6 +145,7 @@ public sealed class ParagraphChunker : ChunkerBase
     private void FinalizeChunk(
         List<DocumentChunk> chunks,
         System.Text.StringBuilder content,
+        int startPosition,
         int endPosition,
         ILanguageProfile profile,
         ChunkOptions options,
@@ -150,7 +162,7 @@ public sealed class ParagraphChunker : ChunkerBase
             content: chunkText,
             index: chunks.Count,
             totalChunks: 0,
-            startPosition: endPosition - content.Length,
+            startPosition: startPosition,
             endPosition: endPosition,
             profile: profile,
             options: options,
@@ -180,6 +192,10 @@ public sealed class ParagraphChunker : ChunkerBase
         var sentenceBoundaries = profile.FindSentenceBoundaries(paragraph);
 
         int currentStart = 0;
+        // Paragraph-relative offset where the current chunk's own (non-overlap) content
+        // begins — the buffer may have overlap prepended, so buffer length must not be
+        // used to derive the start position (see ChunkAsync).
+        int chunkStartInParagraph = 0;
         var currentContent = new System.Text.StringBuilder();
         int currentTokens = 0;
 
@@ -206,7 +222,7 @@ public sealed class ParagraphChunker : ChunkerBase
                     content: chunkText,
                     index: 0, // Will be updated later
                     totalChunks: 0,
-                    startPosition: paragraphStart + currentStart - currentContent.Length,
+                    startPosition: paragraphStart + chunkStartInParagraph,
                     endPosition: paragraphStart + currentStart,
                     profile: profile,
                     options: options,
@@ -224,6 +240,7 @@ public sealed class ParagraphChunker : ChunkerBase
                 // Reset
                 currentContent.Clear();
                 currentTokens = 0;
+                chunkStartInParagraph = currentStart;
 
                 if (!string.IsNullOrEmpty(overlapContent))
                 {
@@ -248,7 +265,7 @@ public sealed class ParagraphChunker : ChunkerBase
                 content: chunkText,
                 index: 0,
                 totalChunks: 0,
-                startPosition: paragraphStart + paragraph.Length - currentContent.Length,
+                startPosition: paragraphStart + chunkStartInParagraph,
                 endPosition: paragraphStart + paragraph.Length,
                 profile: profile,
                 options: options,

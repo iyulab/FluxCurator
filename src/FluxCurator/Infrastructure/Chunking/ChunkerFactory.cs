@@ -38,8 +38,9 @@ public sealed class ChunkerFactory : IChunkerFactory
     {
         if (strategy == ChunkingStrategy.Auto)
         {
-            // For Auto strategy, return a chunker that can analyze content
-            // Default to Sentence for now, can be enhanced with content analysis
+            // A factory cannot see the text, so it cannot resolve Auto by content. Callers
+            // that hold the content MUST resolve first via ChunkingStrategyResolver.Resolve
+            // and pass the concrete strategy — Sentence here is only a last-resort fallback.
             return CreateChunker(ChunkingStrategy.Sentence);
         }
 

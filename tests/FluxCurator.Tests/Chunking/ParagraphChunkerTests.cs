@@ -23,6 +23,47 @@ public class ParagraphChunkerTests
     }
 
     [Fact]
+    public async Task ChunkAsync_WithOverlap_StartPositionIsAbsoluteDocumentOffset()
+    {
+        // Arrange — regression guard: StartPosition used to be derived as
+        // "end - buffer.Length" where the buffer had overlap prepended, shifting every
+        // chunk after the first left by the overlap length. Offset-based consumers
+        // (heading paths, citations) then mapped chunks to the wrong document region.
+        var para1 = string.Join(" ", Enumerable.Repeat("First paragraph sentence with sufficient words inside.", 4));
+        var para2 = string.Join(" ", Enumerable.Repeat("Second paragraph sentence with different words inside.", 4));
+        var text = para1 + "\n\n" + para2;
+        var options = new ChunkOptions
+        {
+            MaxChunkSize = 60,
+            MinChunkSize = 10,
+            TargetChunkSize = 50,
+            OverlapSize = 20,
+            PreserveParagraphs = true
+        };
+
+        // Act
+        var chunks = await _chunker.ChunkAsync(text, options);
+
+        // Assert
+        Assert.True(chunks.Count >= 2, $"expected multiple chunks, got {chunks.Count}");
+        var previousStart = -1;
+        foreach (var chunk in chunks)
+        {
+            // Monotonically increasing absolute offsets, all within the document
+            Assert.True(chunk.Location.StartPosition > previousStart,
+                $"StartPosition {chunk.Location.StartPosition} not after previous {previousStart}");
+            Assert.True(chunk.Location.EndPosition <= text.Length);
+            Assert.True(chunk.Location.StartPosition < chunk.Location.EndPosition);
+            previousStart = chunk.Location.StartPosition;
+        }
+
+        // The second chunk must start at (or after) where the second paragraph begins —
+        // not shifted left by the overlap into the first paragraph's territory.
+        Assert.True(chunks[^1].Location.StartPosition >= text.IndexOf(para2, StringComparison.Ordinal) - 2,
+            $"last chunk StartPosition {chunks[^1].Location.StartPosition} leaks into the previous paragraph");
+    }
+
+    [Fact]
     public async Task ChunkAsync_MultipleParagraphs_SplitsCorrectly()
     {
         // Arrange

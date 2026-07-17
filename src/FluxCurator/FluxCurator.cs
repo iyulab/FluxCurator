@@ -546,31 +546,8 @@ public sealed class FluxCurator : IFluxCurator
         }
     }
 
-    private static ChunkingStrategy ResolveStrategy(string text, ChunkOptions options)
-    {
-        if (options.Strategy != ChunkingStrategy.Auto)
-            return options.Strategy;
-
-        var profile = LanguageProfileRegistry.Instance.DetectProfile(text);
-        var tokenCount = profile.EstimateTokenCount(text);
-
-        // For short texts, use sentence chunking
-        if (tokenCount <= options.TargetChunkSize * 2)
-            return ChunkingStrategy.Sentence;
-
-        // Check paragraph structure
-        var paragraphs = profile.FindParagraphBoundaries(text);
-        if (paragraphs.Count > 3)
-            return ChunkingStrategy.Paragraph;
-
-        // Check sentence structure
-        var sentences = profile.FindSentenceBoundaries(text);
-        if (sentences.Count > 5)
-            return ChunkingStrategy.Sentence;
-
-        // Default to token chunking for unstructured text
-        return ChunkingStrategy.Token;
-    }
+    private static ChunkingStrategy ResolveStrategy(string text, ChunkOptions options) =>
+        ChunkingStrategyResolver.Resolve(text, options);
 
     private IChunker GetChunker(ChunkingStrategy strategy)
     {
