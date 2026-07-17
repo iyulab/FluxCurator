@@ -8,6 +8,49 @@ public class HierarchicalChunkerTests
     private readonly HierarchicalChunker _chunker = new();
 
     [Fact]
+    public async Task ChunkAsync_OversizedSection_DoesNotDuplicateContent()
+    {
+        // Arrange — regression guard: when a section exceeded MaxChunkSize, the sentence-split
+        // path sliced 'boundary - MaxChunkSize .. boundary' (token budget misused as a char
+        // index) and appended the region twice, duplicating chunk content.
+        var sentences = Enumerable.Range(1, 12)
+            .Select(i => $"Unique sentence number {i} talks about subject {i * 7} in detail.");
+        var text = "# Big Section\n\n" + string.Join(" ", sentences);
+        var options = new ChunkOptions
+        {
+            MaxChunkSize = 40,
+            MinChunkSize = 10,
+            TargetChunkSize = 30,
+            OverlapSize = 0
+        };
+
+        // Act
+        var chunks = await _chunker.ChunkAsync(text, options);
+
+        // Assert — every marker appears exactly once across all chunk contents
+        Assert.True(chunks.Count > 1, $"expected the section to split, got {chunks.Count} chunk(s)");
+        var combined = string.Concat(chunks.Select(c => c.Content));
+        for (var i = 1; i <= 12; i++)
+        {
+            var marker = $"Unique sentence number {i} ";
+            var occurrences = CountOccurrences(combined, marker);
+            Assert.True(occurrences == 1, $"'{marker}' appears {occurrences} times (expected 1)");
+        }
+    }
+
+    private static int CountOccurrences(string text, string value)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = text.IndexOf(value, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += value.Length;
+        }
+        return count;
+    }
+
+    [Fact]
     public async Task ChunkAsync_MarkdownHeaders_CreatesHierarchy()
     {
         // Arrange

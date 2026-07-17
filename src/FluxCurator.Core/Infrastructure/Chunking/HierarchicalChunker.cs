@@ -268,15 +268,19 @@ public sealed partial class HierarchicalChunker : ChunkerBase
         string? overlapContent = null;
         var isFirstChunk = true;
 
+        // Sentence-by-sentence accumulation. Each sentence is the span between consecutive
+        // boundaries — the previous implementation sliced 'boundary - MaxChunkSize .. boundary'
+        // (token budget misused as a char index) and appended the region twice, duplicating
+        // chunk content whenever a section exceeded MaxChunkSize.
+        var prevBoundary = 0;
         foreach (var boundary in sentences)
         {
-            var sentenceStart = currentContent.Length == 0 ? 0 : boundary - (section.Content.Length - currentContent.Length);
-            var sentence = section.Content[Math.Max(0, sentenceStart < 0 ? 0 : boundary - options.MaxChunkSize)..boundary];
+            var sentence = section.Content[prevBoundary..boundary];
             var sentenceTokens = profile.EstimateTokenCount(sentence);
 
             if (currentTokens + sentenceTokens > options.MaxChunkSize && currentContent.Length > 0)
             {
-                // Finalize current chunk
+                // Finalize current chunk (the current sentence is NOT part of it)
                 var chunkContent = currentContent.ToString().Trim();
                 if (!string.IsNullOrWhiteSpace(chunkContent))
                 {
@@ -291,7 +295,7 @@ public sealed partial class HierarchicalChunker : ChunkerBase
                         content: chunkContent,
                         index: startIndex + chunks.Count,
                         startPosition: currentStart,
-                        endPosition: section.StartPosition + boundary,
+                        endPosition: section.StartPosition + prevBoundary,
                         profile: profile,
                         options: options,
                         level: section.Level,
@@ -310,7 +314,7 @@ public sealed partial class HierarchicalChunker : ChunkerBase
 
                 currentContent.Clear();
                 currentTokens = 0;
-                currentStart = section.StartPosition + boundary;
+                currentStart = section.StartPosition + prevBoundary;
 
                 // Add overlap to new chunk
                 if (!string.IsNullOrEmpty(overlapContent))
@@ -320,9 +324,15 @@ public sealed partial class HierarchicalChunker : ChunkerBase
                 }
             }
 
-            currentContent.Append(section.Content[..boundary].AsSpan(Math.Max(0, boundary - sentence.Length)));
             currentContent.Append(sentence);
             currentTokens += sentenceTokens;
+            prevBoundary = boundary;
+        }
+
+        // Trailing text after the last sentence boundary belongs to the final chunk
+        if (prevBoundary < section.Content.Length)
+        {
+            currentContent.Append(section.Content[prevBoundary..]);
         }
 
         // Handle remaining content
