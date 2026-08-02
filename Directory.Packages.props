@@ -1,10 +1,10 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
     <!-- Flux Ecosystem -->
-    <PackageVersion Include="Flux.Abstractions" Version="0.13.14" />
+    <PackageVersion Include="Flux.Abstractions" Version="0.24.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- Microsoft Extensions -->
