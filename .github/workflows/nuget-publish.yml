@@ -61,13 +61,29 @@ jobs:
         if: steps.check_tag.outputs.exists == 'false'
         run: dotnet test --configuration Release --no-build --verbosity normal
 
-      - name: Pack FluxCurator.Core
+      # Pack every packable project in the solution, not just the two named today. Naming individual
+      # csproj files here is the same defect class that left FluxImprover.LMSupply and
+      # FileFlux.Providers.LMSupply unpublished at every version until someone noticed (see
+      # iyulab/FluxImprover@4f01b46, iyulab/FileFlux nuget-publish.yml) — a package that is never
+      # produced cannot fail to push, so the gap stays invisible until someone looks for it on
+      # NuGet.org. Packing the solution plus a verification step closes it for any future addition.
+      - name: Pack
         if: steps.check_tag.outputs.exists == 'false'
-        run: dotnet pack src/FluxCurator.Core/FluxCurator.Core.csproj --configuration Release --no-build --output ./nupkg
+        run: dotnet pack FluxCurator.slnx --configuration Release --no-build --output ./nupkg
 
-      - name: Pack FluxCurator
+      - name: Verify all packable projects were produced
         if: steps.check_tag.outputs.exists == 'false'
-        run: dotnet pack src/FluxCurator/FluxCurator.csproj --configuration Release --no-build --output ./nupkg
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          missing=0
+          for csproj in $(grep -oP '(?<=Path=")src/[^"]+\.csproj' FluxCurator.slnx); do
+            id=$(grep -oP '(?<=<PackageId>)[^<]+' "$csproj")
+            if [ ! -f "./nupkg/${id}.${version}.nupkg" ]; then
+              echo "::error::${id}.${version}.nupkg was not produced"
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ]
 
       - name: Push to NuGet
         if: steps.check_tag.outputs.exists == 'false'
