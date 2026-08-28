@@ -59,7 +59,7 @@ jobs:
 
       - name: Run tests
         if: steps.check_tag.outputs.exists == 'false'
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        run: dotnet test --configuration Release --no-build --verbosity normal --blame-hang --blame-hang-timeout 5m
 
       # Pack every packable project in the solution, not just the two named today. Naming individual
       # csproj files here is the same defect class that left FluxImprover.LMSupply and
