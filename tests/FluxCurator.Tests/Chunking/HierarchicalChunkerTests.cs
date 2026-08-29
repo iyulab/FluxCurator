@@ -25,7 +25,7 @@ public class HierarchicalChunkerTests
         };
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert — every marker appears exactly once across all chunk contents
         Assert.True(chunks.Count > 1, $"expected the section to split, got {chunks.Count} chunk(s)");
@@ -74,7 +74,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -105,7 +105,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -127,7 +127,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Single(chunks);
@@ -142,7 +142,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(chunks);
@@ -156,7 +156,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.All(chunks, c => Assert.Equal(ChunkingStrategy.Hierarchical, c.Metadata.Strategy));
@@ -178,7 +178,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         var chunksWithSectionPath = chunks.Where(c => !string.IsNullOrEmpty(c.Location.SectionPath));
@@ -217,7 +217,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -247,7 +247,7 @@ public class HierarchicalChunkerTests
         };
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -275,7 +275,7 @@ public class HierarchicalChunkerTests
         };
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(chunks.Count > 1);
@@ -327,7 +327,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         var parentChunks = chunks.Where(c =>
@@ -359,7 +359,7 @@ public class HierarchicalChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         var ids = chunks.Select(c => c.Id).ToList();

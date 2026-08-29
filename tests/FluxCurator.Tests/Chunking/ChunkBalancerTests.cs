@@ -131,7 +131,7 @@ public class ChunkBalancerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(result);
@@ -148,7 +148,7 @@ public class ChunkBalancerTests
         var options = new ChunkOptions { MinChunkSize = 100 };
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Single(result);
@@ -173,7 +173,7 @@ public class ChunkBalancerTests
         };
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         // Small chunks should be merged
@@ -204,7 +204,7 @@ public class ChunkBalancerTests
         };
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         // All small chunks should merge into fewer chunks
@@ -233,7 +233,7 @@ public class ChunkBalancerTests
         };
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.Count > 1, "Oversized chunk should be split into multiple chunks");
@@ -262,7 +262,7 @@ public class ChunkBalancerTests
         };
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         // Should have more chunks due to splitting
@@ -297,7 +297,7 @@ public class ChunkBalancerTests
         };
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         for (int i = 0; i < result.Count; i++)
@@ -328,7 +328,7 @@ public class ChunkBalancerTests
         };
 
         // Act
-        var result = await _balancer.BalanceAsync(chunks, options);
+        var result = await _balancer.BalanceAsync(chunks, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Equal(chunks.Length, result.Count);
@@ -374,7 +374,7 @@ public class ChunkBalancerTests
                    string.Join(" ", Enumerable.Repeat("This is a longer sentence with more content.", 10));
 
         // Act
-        var chunks = await curator.ChunkAsync(text);
+        var chunks = await curator.ChunkAsync(text, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -400,7 +400,7 @@ public class ChunkBalancerTests
         var text = "First sentence. Second sentence. Third sentence.";
 
         // Act
-        var chunks = await curator.ChunkAsync(text);
+        var chunks = await curator.ChunkAsync(text, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);

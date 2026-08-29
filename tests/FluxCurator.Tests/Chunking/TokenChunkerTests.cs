@@ -18,7 +18,7 @@ public class TokenChunkerTests
         };
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Single(chunks);
@@ -39,7 +39,7 @@ public class TokenChunkerTests
         };
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(chunks.Count > 1);
@@ -53,7 +53,7 @@ public class TokenChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.Empty(chunks);
@@ -67,7 +67,7 @@ public class TokenChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.All(chunks, c => Assert.Equal(ChunkingStrategy.Token, c.Metadata.Strategy));
@@ -88,7 +88,7 @@ public class TokenChunkerTests
         };
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         if (chunks.Count > 1)
@@ -115,7 +115,7 @@ public class TokenChunkerTests
         };
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -131,7 +131,7 @@ public class TokenChunkerTests
         var options = ChunkOptions.FixedSize(50, 10);
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(chunks.Count > 1);
@@ -166,7 +166,7 @@ public class TokenChunkerTests
         var options = ChunkOptions.ForKorean;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
@@ -181,7 +181,7 @@ public class TokenChunkerTests
         var options = ChunkOptions.Default;
 
         // Act
-        var chunks = await _chunker.ChunkAsync(text, options);
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.All(chunks, chunk =>

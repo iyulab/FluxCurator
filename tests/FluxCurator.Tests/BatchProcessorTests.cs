@@ -126,7 +126,7 @@ public class BatchProcessorTests
     [Fact]
     public async Task ProcessAsync_EmptyBatch_ReturnsEmptyList()
     {
-        var results = await _processor.ProcessAsync();
+        var results = await _processor.ProcessAsync(TestContext.Current.CancellationToken);
 
         Assert.Empty(results);
     }
@@ -142,7 +142,7 @@ public class BatchProcessorTests
             .Returns(chunks);
 
         _processor.AddText("hello");
-        var results = await _processor.ProcessAsync();
+        var results = await _processor.ProcessAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(results);
         Assert.Single(results[0]);
@@ -162,7 +162,7 @@ public class BatchProcessorTests
             });
 
         _processor.AddText("text1").AddText("text2");
-        var results = await _processor.ProcessAsync();
+        var results = await _processor.ProcessAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, results.Count);
     }
@@ -189,7 +189,7 @@ public class BatchProcessorTests
     [Fact]
     public async Task PreprocessAsync_EmptyBatch_ReturnsEmptyList()
     {
-        var results = await _processor.PreprocessAsync();
+        var results = await _processor.PreprocessAsync(TestContext.Current.CancellationToken);
 
         Assert.Empty(results);
     }
@@ -207,7 +207,7 @@ public class BatchProcessorTests
             .Returns(result);
 
         _processor.AddText("hello");
-        var results = await _processor.PreprocessAsync();
+        var results = await _processor.PreprocessAsync(TestContext.Current.CancellationToken);
 
         Assert.Single(results);
         Assert.Equal("hello", results[0].OriginalText);

@@ -10,11 +10,11 @@
     <!-- Microsoft Extensions -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
-    <!-- Testing -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
-    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
+    <!-- Testing: xUnit v3/MTP native mode - no Microsoft.NET.Test.Sdk needed, coverlet.collector
+         was a dead reference (CI never invoked the coverage collector flag) -->
+    <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.3.3" />
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
   </ItemGroup>
 </Project>

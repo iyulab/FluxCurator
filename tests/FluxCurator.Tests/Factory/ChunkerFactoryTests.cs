@@ -204,7 +204,7 @@ public class ChunkerFactoryTests
         var text = "Hello world. This is a test.";
 
         // Act
-        var chunks = await chunker.ChunkAsync(text, ChunkOptions.Default);
+        var chunks = await chunker.ChunkAsync(text, ChunkOptions.Default, TestContext.Current.CancellationToken);
 
         // Assert
         Assert.NotEmpty(chunks);
