@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Flux Ecosystem -->
-    <PackageVersion Include="Flux.Abstractions" Version="0.24.0" />
+    <PackageVersion Include="Flux.Abstractions" Version="0.25.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- Microsoft Extensions -->
