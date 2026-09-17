@@ -8,8 +8,8 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Microsoft Extensions -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
     <!-- Testing: xUnit v3/MTP native mode - no Microsoft.NET.Test.Sdk needed, coverlet.collector
          was a dead reference (CI never invoked the coverage collector flag) -->
     <PackageVersion Include="xunit.v3" Version="4.0.0" />
