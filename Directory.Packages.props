@@ -1,4 +1,4 @@
-﻿<Project>
+<Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
@@ -13,6 +13,7 @@
     <!-- Testing: xUnit v3/MTP native mode - no Microsoft.NET.Test.Sdk needed, coverlet.collector
          was a dead reference (CI never invoked the coverage collector flag) -->
     <PackageVersion Include="xunit.v3" Version="4.0.0" />
+    <PackageVersion Include="Iyu.Conventions.Testing" Version="0.1.0" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageVersion Include="Microsoft.Testing.Extensions.HangDump" Version="2.3.3" />
     <PackageVersion Include="NSubstitute" Version="6.2.0" />
