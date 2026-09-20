@@ -75,12 +75,6 @@ public sealed class PIIMaskingOptions
     public float MinConfidence { get; set; } = 0.8f;
 
     /// <summary>
-    /// Gets or sets whether to validate detected patterns (e.g., checksum validation).
-    /// Default: true.
-    /// </summary>
-    public bool ValidatePatterns { get; set; } = true;
-
-    /// <summary>
     /// Gets or sets custom token formats for each PII type.
     /// </summary>
     public Dictionary<PIIType, string> CustomTokens { get; set; } = new();
@@ -96,24 +90,6 @@ public sealed class PIIMaskingOptions
     /// Default: 2.
     /// </summary>
     public int PartialPreserveCount { get; set; } = 2;
-
-    /// <summary>
-    /// Gets or sets whether to include detection metadata in results.
-    /// Default: true.
-    /// </summary>
-    public bool IncludeMetadata { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets whether to process text in parallel for large inputs.
-    /// Default: true.
-    /// </summary>
-    public bool EnableParallelProcessing { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the minimum text length for parallel processing.
-    /// Default: 10000 characters.
-    /// </summary>
-    public int ParallelThreshold { get; set; } = 10000;
 
     /// <summary>
     /// Gets the token format for a specific PII type.
@@ -162,8 +138,7 @@ public sealed class PIIMaskingOptions
     {
         LanguageCodes = [languageCode],
         TypesToMask = PIIType.Common,
-        Strategy = MaskingStrategy.Token,
-        ValidatePatterns = true
+        Strategy = MaskingStrategy.Token
     };
 
     /// <summary>
@@ -176,8 +151,7 @@ public sealed class PIIMaskingOptions
     {
         LanguageCodes = languageCodes,
         TypesToMask = PIIType.Common,
-        Strategy = MaskingStrategy.Token,
-        ValidatePatterns = true
+        Strategy = MaskingStrategy.Token
     };
 
     /// <summary>
@@ -188,8 +162,7 @@ public sealed class PIIMaskingOptions
         LanguageCodes = ["auto"],
         TypesToMask = PIIType.All,
         Strategy = MaskingStrategy.Token,
-        MinConfidence = 0.7f,
-        ValidatePatterns = true
+        MinConfidence = 0.7f
     };
 
     /// <summary>

@@ -74,12 +74,6 @@ public sealed class ContentFilterOptions
     public Dictionary<string, string> CustomPatterns { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets whether to include detection metadata in results.
-    /// Default: true.
-    /// </summary>
-    public bool IncludeMetadata { get; set; } = true;
-
-    /// <summary>
     /// Gets the replacement text for a specific category.
     /// </summary>
     public string GetReplacementText(ContentCategory category)

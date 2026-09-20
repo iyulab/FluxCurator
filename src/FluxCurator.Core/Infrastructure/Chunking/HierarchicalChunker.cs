@@ -47,7 +47,7 @@ public sealed partial class HierarchicalChunker : ChunkerBase
             return Task.FromResult<IReadOnlyList<DocumentChunk>>([]);
 
         var profile = GetLanguageProfile(text, options);
-        var sections = ParseSections(text);
+        var sections = ParseSections(text, options.PreserveSectionHeaders);
         var chunks = new List<DocumentChunk>();
         var parentStack = new Stack<DocumentChunk>();
 
@@ -102,7 +102,7 @@ public sealed partial class HierarchicalChunker : ChunkerBase
             return 0;
 
         var profile = GetLanguageProfile(text, options);
-        var sections = ParseSections(text);
+        var sections = ParseSections(text, options.PreserveSectionHeaders);
         var totalTokens = 0;
         var estimatedChunks = 0;
 
@@ -131,7 +131,7 @@ public sealed partial class HierarchicalChunker : ChunkerBase
     /// <summary>
     /// Parses the text into hierarchical sections based on markdown headers.
     /// </summary>
-    private static List<DocumentSection> ParseSections(string text)
+    private static List<DocumentSection> ParseSections(string text, bool preserveSectionHeaders)
     {
         var sections = new List<DocumentSection>();
         var headerPattern = HeaderRegex();
@@ -183,7 +183,13 @@ public sealed partial class HierarchicalChunker : ChunkerBase
                 : text.Length;
 
             var content = text[contentStart..contentEnd].Trim();
-            var fullContent = match.Value + "\n" + content;
+
+            // The header enters the content here and nowhere else. It used to be prepended a
+            // second time to the first chunk of a split section, so a section that exceeded
+            // MaxChunkSize carried its header twice.
+            var fullContent = preserveSectionHeaders
+                ? match.Value + "\n" + content
+                : content;
 
             sections.Add(new DocumentSection
             {
@@ -266,7 +272,6 @@ public sealed partial class HierarchicalChunker : ChunkerBase
         var currentStart = section.StartPosition;
         var currentTokens = 0;
         string? overlapContent = null;
-        var isFirstChunk = true;
 
         // Sentence-by-sentence accumulation. Each sentence is the span between consecutive
         // boundaries — the previous implementation sliced 'boundary - MaxChunkSize .. boundary'
@@ -284,13 +289,6 @@ public sealed partial class HierarchicalChunker : ChunkerBase
                 var chunkContent = currentContent.ToString().Trim();
                 if (!string.IsNullOrWhiteSpace(chunkContent))
                 {
-                    // Add section header to first chunk
-                    if (isFirstChunk && !string.IsNullOrEmpty(section.HeaderLine))
-                    {
-                        chunkContent = section.HeaderLine + "\n" + chunkContent;
-                        isFirstChunk = false;
-                    }
-
                     var chunk = CreateHierarchicalChunk(
                         content: chunkContent,
                         index: startIndex + chunks.Count,
@@ -341,11 +339,6 @@ public sealed partial class HierarchicalChunker : ChunkerBase
             var chunkContent = currentContent.ToString().Trim();
             if (!string.IsNullOrWhiteSpace(chunkContent))
             {
-                if (isFirstChunk && !string.IsNullOrEmpty(section.HeaderLine))
-                {
-                    chunkContent = section.HeaderLine + "\n" + chunkContent;
-                }
-
                 var chunk = CreateHierarchicalChunk(
                     content: chunkContent,
                     index: startIndex + chunks.Count,

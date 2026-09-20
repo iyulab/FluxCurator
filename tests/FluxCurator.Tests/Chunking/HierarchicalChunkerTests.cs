@@ -365,4 +365,89 @@ public class HierarchicalChunkerTests
         var ids = chunks.Select(c => c.Id).ToList();
         Assert.Equal(ids.Count, ids.Distinct().Count());
     }
+
+    // PreserveSectionHeaders was declared, documented and read by nothing: the header line was
+    // prepended to a section's first chunk unconditionally. Both directions are asserted, and the
+    // "on" case takes the value from a fresh ChunkOptions so that moving the declared default
+    // turns this red instead of shipping quietly.
+
+    private const string SectionedText = """
+        # Introduction
+
+        Alpha beta gamma delta. Epsilon zeta eta theta.
+
+        # Conclusion
+
+        Iota kappa lambda mu. Nu xi omicron pi.
+        """;
+
+    [Fact]
+    public async Task ChunkAsync_DeclaredDefault_CarriesTheSectionHeaderIntoItsFirstChunk()
+    {
+        var options = new ChunkOptions();
+
+        Assert.True(
+            options.PreserveSectionHeaders,
+            "carrying the header is the long-standing behaviour; turning it off must stay opt-in");
+
+        var chunks = await _chunker.ChunkAsync(SectionedText, options, TestContext.Current.CancellationToken);
+
+        Assert.Contains(chunks, c => c.Content.Contains("# Introduction", StringComparison.Ordinal));
+        Assert.Contains(chunks, c => c.Content.Contains("# Conclusion", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ChunkAsync_PreserveSectionHeadersOff_LeavesTheHeaderOutOfTheContent()
+    {
+        var options = new ChunkOptions { PreserveSectionHeaders = false };
+
+        var chunks = await _chunker.ChunkAsync(SectionedText, options, TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain(chunks, c => c.Content.Contains("# Introduction", StringComparison.Ordinal));
+        Assert.DoesNotContain(chunks, c => c.Content.Contains("# Conclusion", StringComparison.Ordinal));
+
+        // The body is still chunked - turning the header off must not lose the section.
+        Assert.Contains(chunks, c => c.Content.Contains("Alpha beta gamma", StringComparison.Ordinal));
+        Assert.Contains(chunks, c => c.Content.Contains("Iota kappa lambda", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ChunkAsync_SplitSection_CarriesItsHeaderExactlyOnce()
+    {
+        // Found while wiring PreserveSectionHeaders: the header was baked into the section content
+        // when sections were parsed, and then prepended a second time to the first chunk of a
+        // split section - so any section over MaxChunkSize carried its header twice. The existing
+        // duplication guard counted sentence markers, not the header, so it stayed green.
+        var sentences = Enumerable.Range(1, 12)
+            .Select(i => $"Unique sentence number {i} talks about subject {i * 7} in detail.");
+        var text = "# Big Section\n\n" + string.Join(" ", sentences);
+        var options = new ChunkOptions
+        {
+            MaxChunkSize = 40,
+            MinChunkSize = 10,
+            TargetChunkSize = 30,
+            OverlapSize = 0
+        };
+
+        var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
+
+        Assert.True(chunks.Count > 1, $"expected the section to split, got {chunks.Count} chunk(s)");
+
+        var combined = string.Concat(chunks.Select(c => c.Content));
+        var occurrences = CountOccurrences(combined, "# Big Section");
+        Assert.True(occurrences == 1, $"section header appears {occurrences} time(s) (expected 1)");
+    }
+
+    [Fact]
+    public async Task ChunkAsync_PreserveSectionHeadersOff_StillDetectsTheSectionHeader()
+    {
+        // Detection is not what this option controls: ChunkMetadata.ContainsSectionHeader is
+        // stamped either way, so a consumer that suppresses the header text can still tell which
+        // chunk opened a section.
+        var options = new ChunkOptions { PreserveSectionHeaders = false };
+
+        var chunks = await _chunker.ChunkAsync(SectionedText, options, TestContext.Current.CancellationToken);
+
+        Assert.Contains(chunks, c => c.Metadata.ContainsSectionHeader);
+    }
 }

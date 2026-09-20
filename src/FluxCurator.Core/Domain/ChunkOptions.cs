@@ -80,9 +80,14 @@ public sealed class ChunkOptions
     public bool PreserveSentences { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets whether to detect and preserve section headers.
-    /// Default: true.
+    /// Gets or sets whether a section's header line is carried into the first chunk of that
+    /// section. Default: true.
     /// </summary>
+    /// <remarks>
+    /// Applies to hierarchical chunking, which is where sections are detected. Header detection
+    /// itself is unaffected - <c>ChunkMetadata.ContainsSectionHeader</c> is still stamped either
+    /// way; this only decides whether the header text is prepended to the chunk content.
+    /// </remarks>
     public bool PreserveSectionHeaders { get; set; } = true;
 
     /// <summary>
@@ -91,12 +96,6 @@ public sealed class ChunkOptions
     /// Range: 0.0 to 1.0. Default: 0.5.
     /// </summary>
     public float SemanticSimilarityThreshold { get; set; } = 0.5f;
-
-    /// <summary>
-    /// Gets or sets whether to include chunk metadata (position, quality scores, etc.).
-    /// Default: true.
-    /// </summary>
-    public bool IncludeMetadata { get; set; } = true;
 
     /// <summary>
     /// Gets or sets whether to trim whitespace from chunk boundaries.
@@ -135,7 +134,6 @@ public sealed class ChunkOptions
         OverlapSize = 64,
         PreserveSentences = true,
         PreserveParagraphs = true,
-        IncludeMetadata = true,
         EnableChunkBalancing = true
     };
 
@@ -169,7 +167,6 @@ public sealed class ChunkOptions
         PreserveSentences = true,
         PreserveParagraphs = true,
         PreserveSectionHeaders = true,
-        IncludeMetadata = true,
         EnableChunkBalancing = true
     };
 
@@ -202,7 +199,6 @@ public sealed class ChunkOptions
         OverlapSize = 25,
         PreserveSentences = true,
         PreserveParagraphs = true,
-        IncludeMetadata = true,
         EnableChunkBalancing = true
     };
 
@@ -219,7 +215,6 @@ public sealed class ChunkOptions
         OverlapSize = 50,
         PreserveSentences = true,
         PreserveParagraphs = true,
-        IncludeMetadata = true,
         EnableChunkBalancing = true
     };
 
@@ -236,7 +231,6 @@ public sealed class ChunkOptions
         OverlapSize = 128,
         PreserveSentences = true,
         PreserveParagraphs = true,
-        IncludeMetadata = true,
         EnableChunkBalancing = true
     };
 }

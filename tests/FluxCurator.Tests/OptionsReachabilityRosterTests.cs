@@ -30,18 +30,32 @@ public class OptionsReachabilityRosterTests
     /// below live in FluxCurator.Core.
     /// </para>
     /// </summary>
-    private static readonly Dictionary<string, string[]> KnownUnread = new()
-    {
-        ["FluxCurator.Core.Domain.ChunkOptions"] =
-        [
-            "IncludeMetadata", "PreserveSectionHeaders",
-        ],
-        ["FluxCurator.Core.Domain.ContentFilterOptions"] = ["IncludeMetadata"],
-        ["FluxCurator.Core.Domain.PIIMaskingOptions"] =
-        [
-            "EnableParallelProcessing", "IncludeMetadata", "ParallelThreshold", "ValidatePatterns",
-        ],
-    };
+    /// <para>
+    /// Now empty, and the seven closed in three different ways.
+    /// </para>
+    /// <para>
+    /// Wired: <c>ChunkOptions.PreserveSectionHeaders</c>. The header was carried into a section's
+    /// first chunk unconditionally, so the option could not turn it off - and the wiring exposed a
+    /// second defect, because the header was also prepended a second time to the first chunk of a
+    /// split section. It now enters once, where sections are parsed.
+    /// </para>
+    /// <para>
+    /// Removed as a switch over something the library always does and callers cannot opt out of:
+    /// the three <c>IncludeMetadata</c> copies (chunk metadata is not optional - the chunker itself
+    /// reads <c>EstimatedTokenCount</c> to merge and split; neither <c>PIIMaskingResult</c> nor
+    /// <c>ContentFilterResult</c> has a metadata field to gate) and
+    /// <c>PIIMaskingOptions.ValidatePatterns</c>. That last one is worth a sentence: checksum
+    /// validation is real and thorough - Luhn for cards, ISO 7064, Modulo-97 and a dozen national
+    /// schemes - but every detector runs it unconditionally and none of them takes an options
+    /// object, so the switch had nowhere to land. Detection quality is not a knob here.
+    /// </para>
+    /// <para>
+    /// Removed as a feature that does not exist: <c>EnableParallelProcessing</c> and
+    /// <c>ParallelThreshold</c>. There is no parallelism in the PII path at all - no
+    /// <c>Parallel.*</c>, no <c>AsParallel</c>, no <c>Task.WhenAll</c> anywhere in
+    /// <c>FluxCurator.Core</c>; masking is a sequential loop that never looks at the text length.
+    /// </para>
+    private static readonly Dictionary<string, string[]> KnownUnread = new();
 
     [Fact]
     public void EveryPublicOption_IsRead() =>

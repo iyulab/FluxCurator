@@ -116,10 +116,11 @@ public class SentenceChunkerTests
     {
         // Arrange
         var text = "This is a test sentence. Here is another one.";
-        var options = new ChunkOptions
-        {
-            IncludeMetadata = true
-        };
+
+        // Chunk metadata is not optional - the library itself reads EstimatedTokenCount to merge
+        // and split chunks. This used to set IncludeMetadata = true, which was that option's
+        // default and gated nothing, so the assertion below held either way.
+        var options = new ChunkOptions();
 
         // Act
         var chunks = await _chunker.ChunkAsync(text, options, TestContext.Current.CancellationToken);
