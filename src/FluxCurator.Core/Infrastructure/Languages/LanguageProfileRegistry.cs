@@ -47,14 +47,24 @@ public sealed class LanguageProfileRegistry
     /// <summary>
     /// Gets a language profile by language code.
     /// </summary>
-    /// <param name="languageCode">ISO 639-1 language code.</param>
-    /// <returns>The language profile, or default (English) if not found.</returns>
+    /// <param name="languageCode">ISO 639-1 language code or IETF tag (e.g., "ko", "zh-TW", "pt-BR").</param>
+    /// <returns>
+    /// The profile for the code; for a tag with a region (<c>zh-TW</c>), the profile for its primary language
+    /// (<c>zh</c>) when there is none for the full tag; otherwise the default (English).
+    /// </returns>
     public ILanguageProfile GetProfile(string? languageCode)
     {
         if (string.IsNullOrEmpty(languageCode))
             return _defaultProfile;
 
-        return _profiles.TryGetValue(languageCode, out var profile) ? profile : _defaultProfile;
+        if (_profiles.TryGetValue(languageCode, out var profile))
+            return profile;
+
+        var separator = languageCode.IndexOfAny(['-', '_']);
+        if (separator > 0 && _profiles.TryGetValue(languageCode[..separator], out profile))
+            return profile;
+
+        return _defaultProfile;
     }
 
     /// <summary>

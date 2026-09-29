@@ -79,27 +79,23 @@ var chunks = await chunker.ChunkAsync(text, options);
 FluxCurator has first-class support for Korean text:
 
 ```csharp
-var options = ChunkOptions.ForKorean;
-var chunks = await chunker.ChunkAsync(koreanText, options);
+var curator = new Curator().WithChunkingOptions(ChunkOptions.ForKorean);
+var chunks = await curator.ChunkAsync(koreanText);
 ```
 
 ## Chunk Options
 
 ### Preset Configurations
 
-```csharp
-// General purpose defaults
-ChunkOptions.Default
+| Preset | Use |
+|--------|-----|
+| `ChunkOptions.Default` | General purpose defaults |
+| `ChunkOptions.ForRAG` | Optimized for RAG (512 target, semantic) |
+| `ChunkOptions.ForKorean` | Optimized for Korean (400 target, Korean sentence endings) |
+| `ChunkOptions.FixedSize(256, 32)` | Fixed size with overlap |
 
-// Optimized for RAG (512 target, semantic if available)
-ChunkOptions.ForRAG
-
-// Optimized for Korean (400 target, Korean sentence endings)
-ChunkOptions.ForKorean
-
-// Fixed size with overlap
-ChunkOptions.FixedSize(256, 32)
-```
+The full preset table (including `ForLargeDocument` and the context-size presets) is in the
+[README](../README.md#preset-comparison-by-embedding-model).
 
 ### Custom Configuration
 
@@ -115,47 +111,40 @@ var options = new ChunkOptions
     PreserveSentences = true,
     PreserveParagraphs = true,
     PreserveSectionHeaders = true,
-    IncludeMetadata = true,
     TrimWhitespace = true
 };
 ```
 
 ## DocumentChunk Structure
 
-Each chunk contains:
+Each `DocumentChunk` carries:
 
-```csharp
-public class DocumentChunk
-{
-    public string Id { get; set; }
-    public string Content { get; set; }
-    public int Index { get; set; }
-    public int TotalChunks { get; set; }
-    public ChunkLocation Location { get; set; }
-    public ChunkMetadata Metadata { get; set; }
-}
-```
+| Property | Meaning |
+|----------|---------|
+| `Id` | Chunk identifier |
+| `Content` | The chunk text |
+| `ChunkIndex` / `TotalChunks` | Position in the result (0-based) and the result size |
+| `Location` | Where the chunk came from (below) |
+| `Metadata` | What the chunker knows about it (below) |
 
 ### Location Information
 
-```csharp
-chunk.Location.StartPosition    // Character start position
-chunk.Location.EndPosition      // Character end position
-chunk.Location.StartLine        // Line number start
-chunk.Location.EndLine          // Line number end
-chunk.Location.SectionPath      // Hierarchical section path (e.g., "Chapter 1 > Section 1.1")
-```
+| Property | Meaning |
+|----------|---------|
+| `Location.StartPosition` / `EndPosition` | Character positions in the source text |
+| `Location.StartLine` / `EndLine` | Line numbers |
+| `Location.StartPage` / `EndPage` | Page numbers, when the source had pages |
+| `Location.SectionPath` | Hierarchical section path (e.g., "Chapter 1 > Section 1.1") |
 
 ### Metadata
 
-```csharp
-chunk.Metadata.Strategy             // ChunkingStrategy used
-chunk.Metadata.LanguageCode         // Detected/specified language
-chunk.Metadata.EstimatedTokenCount  // Approximate token count
-chunk.Metadata.QualityScore         // Content quality score
-chunk.Metadata.DensityScore         // Information density
-chunk.Metadata.Custom               // Custom key-value pairs
-```
+| Property | Meaning |
+|----------|---------|
+| `Metadata.Strategy` | The `ChunkingStrategy` used |
+| `Metadata.LanguageCode` | Detected or specified language |
+| `Metadata.EstimatedTokenCount` | Approximate token count |
+| `Metadata.QualityScore` / `DensityScore` | Content quality and information density |
+| `Metadata.Custom` | Strategy-specific key-value pairs (e.g., `HierarchyLevel`) |
 
 ## PII Masking
 
@@ -170,9 +159,9 @@ Console.WriteLine(result.MaskedText);
 // Output: "Email: [EMAIL], Phone: [PHONE]"
 
 // Access detection details
-foreach (var detection in result.Detections)
+foreach (var match in result.Matches)
 {
-    Console.WriteLine($"{detection.Type}: {detection.OriginalValue}");
+    Console.WriteLine($"{match.Type}: {match.Value} -> {match.MaskedValue}");
 }
 ```
 
@@ -195,10 +184,10 @@ Filter harmful or unwanted content:
 var curator = new Curator()
     .WithContentFiltering();
 
-var result = curator.Filter(text);
-if (result.WasFiltered)
+var result = curator.FilterContent(text);
+if (result.HasFilteredContent)
 {
-    Console.WriteLine($"Filtered {result.FilteredCount} items");
+    Console.WriteLine($"Filtered {result.MatchCount} items");
 }
 ```
 
@@ -216,7 +205,7 @@ var curator = new Curator()
 var result = await curator.PreprocessAsync(text);
 
 Console.WriteLine(result.GetSummary());
-// Output: "Produced 5 chunk(s). Filtered 2 content item(s). Masked 3 PII item(s)."
+// e.g. "Produced 5 chunk(s). Filtered 2 content item(s). Masked 3 PII item(s)."
 ```
 
 ## Next Steps

@@ -19,10 +19,19 @@ breaking changes, and each one is marked **Breaking** with a migration note.
   now always runs; `TypesToMask` selects among the built-in detectors only.
 - **`WithPIIMasking(...)` after `RegisterPIIDetector` keeps the detector.** Reconfiguring the options rebuilt the
   masker without the detectors registered on the curator.
+- **A language tag with a region uses its language's profile.** `ChunkOptions.LanguageCode = "zh-TW"` (or `"pt-BR"`,
+  `"en-US"`) matched no profile and fell back to English sentence and token rules without a word; it now resolves to
+  the `zh` (`pt`, `en`) profile. Unknown languages still fall back to English.
 - **The README's code compiles.** Every C# block is compiled against the current API in CI. The fixes: the entry point
   (above), the three `using` lines the examples need (stated once in Quick Start), a sample SSN the detector treats as
   a known test number, custom detector examples whose type declarations followed their statements, a custom national
   ID example for a country the library already covers, and a FileFlux example naming types from another package.
+- **The guides under `docs/` match the API and are compiled in CI too.** Among the corrections: `DocumentChunk.ChunkIndex`
+  (not `Index`), `PIIMaskingResult.Matches`, `FilterContent`, `PreprocessingResult`, the services `AddFluxCurator`
+  actually registers (`IChunkerFactory` singleton, `IFluxCurator` transient — no separate PII or filter services), how
+  `Auto` really selects a strategy (Sentence, Paragraph or Token — never Semantic or Hierarchical, and a
+  `ChunkerFactory` cannot resolve it), the removed `IncludeMetadata` option, and the FileFlux integration page, which
+  described a strategy type FileFlux does not have.
 
 ## [0.9.1] - 2026-09-23
 

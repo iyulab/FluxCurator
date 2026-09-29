@@ -74,6 +74,25 @@ public class LanguageProfileRegistryTests
         Assert.Equal("Korean", profile.LanguageName);
     }
 
+    [Theory]
+    [InlineData("zh-TW", "zh")]
+    [InlineData("pt-BR", "pt")]
+    [InlineData("ko-KR", "ko")]
+    [InlineData("zh_Hant", "zh")]
+    public void GetProfile_TagWithRegion_ReturnsThePrimaryLanguageProfile(string tag, string expected)
+    {
+        // A region tag used to miss the lookup and fall back to English without a word.
+        var profile = LanguageProfileRegistry.Instance.GetProfile(tag);
+
+        Assert.Equal(expected, profile.LanguageCode);
+    }
+
+    [Fact]
+    public void GetProfile_UnknownLanguage_StillReturnsDefault()
+    {
+        Assert.Equal("en", LanguageProfileRegistry.Instance.GetProfile("xx-YY").LanguageCode);
+    }
+
     [Fact]
     public void GetProfile_Null_ReturnsDefault()
     {

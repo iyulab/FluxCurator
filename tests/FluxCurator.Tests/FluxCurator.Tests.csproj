@@ -12,7 +12,6 @@
   <ItemGroup>
     <PackageReference Include="Iyu.Conventions.Testing" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
@@ -22,6 +21,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\FluxCurator.Core\FluxCurator.Core.csproj" />
     <ProjectReference Include="..\..\src\FluxCurator\FluxCurator.csproj" />
+  </ItemGroup>
+
+  <!-- The docs show an ASP.NET Core minimal API; the README compile test resolves it from the shared framework. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

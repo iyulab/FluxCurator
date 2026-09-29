@@ -17,7 +17,12 @@ FluxCurator provides six chunking strategies, each optimized for different use c
 
 Splits text at sentence boundaries while respecting chunk size constraints.
 
+The examples on this page create chunkers from a `ChunkerFactory` (namespace `FluxCurator.Infrastructure.Chunking`);
+`Curator` does the same for you from `ChunkOptions.Strategy`.
+
 ```csharp
+using FluxCurator.Infrastructure.Chunking;
+
 var factory = new ChunkerFactory();
 var chunker = factory.CreateChunker(ChunkingStrategy.Sentence);
 
@@ -130,12 +135,12 @@ foreach (var chunk in chunks)
 
 ### Hierarchy Metadata
 
-Each chunk includes:
+Each chunk's `Metadata.Custom` holds these keys (the names are constants on `HierarchicalChunker`):
 
-- `HierarchyLevel`: Depth in the document tree (0 = root)
-- `ParentId`: ID of the parent chunk (null for root)
-- `ChildIds`: List of child chunk IDs
-- `SectionTitle`: Title of the current section
+- `HierarchyLevel` (`HierarchyLevelKey`): the header depth (1 = `#`, 6 = `######`); 0 for text before the first header
+- `ParentId` (`ParentIdKey`): ID of the parent chunk (absent for a root)
+- `ChildIds` (`ChildIdsKey`): list of child chunk IDs
+- `SectionTitle` (`SectionTitleKey`): title of the current section
 
 ### Header Detection
 
@@ -162,11 +167,12 @@ Supports Markdown-style headers:
 Splits text based on semantic similarity using embeddings.
 
 ```csharp
-// Requires an IEmbedder implementation (inject your own)
-var embedder = myEmbedder; // Your IEmbedder implementation (e.g., OpenAI, LMSupply, etc.)
-var factory = new ChunkerFactory(embedder);
+using FluxCurator.Infrastructure.Chunking;
 
-var chunker = factory.CreateChunker(ChunkingStrategy.Semantic);
+// Requires an IEmbedder implementation (inject your own, e.g. OpenAI, LMSupply)
+var semanticFactory = new ChunkerFactory(myEmbedder);
+
+var chunker = semanticFactory.CreateChunker(ChunkingStrategy.Semantic);
 
 var options = new ChunkOptions
 {
@@ -200,18 +206,25 @@ var chunks = await chunker.ChunkAsync(text, options);
 
 ## Auto Strategy
 
-Automatically selects the best strategy based on content analysis.
+Selects a strategy from the text itself. `Auto` is the default `ChunkOptions.Strategy`, and `Curator` resolves it per
+call:
 
 ```csharp
-var chunker = factory.CreateChunker(ChunkingStrategy.Auto);
+var curator = new Curator();              // ChunkOptions.Default: Strategy = Auto
+var chunks = await curator.ChunkAsync(text);
 ```
+
+A `ChunkerFactory` cannot see the text, so `factory.CreateChunker(ChunkingStrategy.Auto)` returns the Sentence chunker.
+To resolve `Auto` yourself, call `ChunkingStrategyResolver.Resolve(text, options)` first.
 
 ### Selection Logic
 
-1. If embedder available and content is long: **Semantic**
-2. If content has clear headers: **Hierarchical**
-3. If content has clear paragraphs: **Paragraph**
-4. Default: **Sentence**
+1. Short text (at most twice `TargetChunkSize` in estimated tokens): **Sentence**
+2. More than three paragraphs: **Paragraph**
+3. More than five sentences: **Sentence**
+4. Otherwise: **Token**
+
+`Auto` never selects Semantic or Hierarchical — ask for them explicitly.
 
 ## Chunk Overlap
 
@@ -224,24 +237,19 @@ var options = new ChunkOptions
 };
 ```
 
-Overlap is stored in metadata:
-
-```csharp
-chunk.Metadata.OverlapFromPrevious  // Text overlapping from previous chunk
-chunk.Metadata.OverlapToNext        // Text that will overlap with next chunk
-```
+The overlapping text is stored in `chunk.Metadata.OverlapFromPrevious` (the text carried over from the previous chunk,
+or `null` for the first).
 
 ## Language Support
 
-FluxCurator includes profiles for 11 languages:
+FluxCurator includes profiles for 13 languages:
 
 | Language | Code | Special Features |
 |----------|------|------------------|
 | Korean | `ko` | 습니다체/해요체 endings |
 | English | `en` | Standard boundaries |
 | Japanese | `ja` | Japanese punctuation |
-| Chinese (Simplified) | `zh` | Chinese punctuation |
-| Chinese (Traditional) | `zh-TW` | Traditional punctuation |
+| Chinese (Simplified and Traditional) | `zh` (`zh-TW`, `zh-CN`, ... resolve to it) | Chinese punctuation |
 | Spanish | `es` | Spanish punctuation |
 | French | `fr` | French punctuation |
 | German | `de` | German punctuation |

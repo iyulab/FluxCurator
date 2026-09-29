@@ -46,6 +46,12 @@ public class ReadmeSnippetCompileTests
         ("markdownText", "string markdownText = \"\";"),
         ("largeDocument", "string largeDocument = \"\";"),
         ("extractedText", "string extractedText = \"\";"),
+        ("koreanText", "string koreanText = \"\";"),
+        ("pdfText", "string pdfText = \"\";"),
+        ("chunks", "IReadOnlyList<FluxCurator.Core.Domain.DocumentChunk> chunks = [];"),
+        ("curator", "FluxCurator.Curator curator = new();"),
+        // Option snippets that are the body of a WithChunkingOptions(opt => { ... }) callback.
+        ("opt", "FluxCurator.Core.Domain.ChunkOptions opt = new();"),
         ("myEmbedder", "FluxCurator.Core.Core.IEmbedder myEmbedder = null!;"),
     ];
 
@@ -65,9 +71,29 @@ public class ReadmeSnippetCompileTests
                 protected override bool ValidateMatch(string value, out float confidence) { confidence = 1; return true; }
             }
             """),
+        ("OpenAIEmbedder", """
+            public class OpenAIEmbedder : FluxCurator.Core.Core.IEmbedder
+            {
+                public int EmbeddingDimension => 1536;
+                public Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default) => Task.FromResult(new float[1536]);
+                public Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(IEnumerable<string> texts, CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<float[]>>([]);
+                public float CalculateSimilarity(float[] embedding1, float[] embedding2) => 0;
+            }
+            """),
+        ("DocumentProcessor", """
+            public class DocumentProcessor(FluxCurator.Core.Core.IChunkerFactory chunkerFactory)
+            {
+                public Task<IReadOnlyList<FluxCurator.Core.Domain.DocumentChunk>> ProcessAsync(string text, FluxCurator.Core.Domain.ChunkingStrategy strategy) =>
+                    chunkerFactory.CreateChunker(strategy).ChunkAsync(text, FluxCurator.Core.Domain.ChunkOptions.Default);
+            }
+            """),
     ];
 
-    private static readonly Dictionary<string, (string Name, string Declaration)[]> DocumentStandIns = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, (string Name, string Declaration)[]> DocumentStandIns = new(StringComparer.Ordinal)
+    {
+        // chunking-strategies.md creates its factory once, in the first example.
+        ["docs/chunking-strategies.md"] = [("factory", "FluxCurator.Infrastructure.Chunking.ChunkerFactory factory = new();")],
+    };
 
     private static readonly string[] AssembliesToLoad =
     [
@@ -139,6 +165,12 @@ public class ReadmeSnippetCompileTests
         foreach (var readme in Directory.GetDirectories(Path.Combine(root, "src")).Order(StringComparer.Ordinal)
                      .Select(d => Path.Combine(d, "README.md")).Where(File.Exists))
             yield return readme;
+
+        // The guides under docs/ are read the same way. fileflux-integration.md shows FileFlux's side of the integration:
+        // its types live in the FileFlux package, which depends on this one, so this test project cannot reference it.
+        foreach (var doc in Directory.GetFiles(Path.Combine(root, "docs"), "*.md").Order(StringComparer.Ordinal)
+                     .Where(d => Path.GetFileName(d) != "fileflux-integration.md"))
+            yield return doc;
     }
 
     private static List<Block> ReadBlocks()
@@ -190,13 +222,17 @@ public class ReadmeSnippetCompileTests
         // A block that states a using the README already assumes must not get it twice (CS0105 is a warning, but keep
         // the program as a reader would write it).
         var stated = lines.Where(IsUsingDirective).Select(Code).ToHashSet(StringComparer.Ordinal);
-        var assumed = (document == "README.md" ? ReadmeUsings : []).Select(n => $"using {n};").Where(u => !stated.Contains(u));
+        var assumed = (IsGuide(document) ? ReadmeUsings : []).Select(n => $"using {n};").Where(u => !stated.Contains(u));
 
         return string.Join("\n", stated) + "\n" + CommonUsings + "\n"
                + string.Join("\n", assumed) + "\n"
                + string.Join("\n", PackageNamespaces(document).Select(n => $"using {n};")) + "\n"
                + string.Join("\n", standIns) + "\n" + body + "\n" + string.Join("\n", typeStandIns);
     }
+
+    // The repository README and the docs/ guides assume the three usings the README's Quick Start states.
+    private static bool IsGuide(string document) =>
+        document == "README.md" || document.StartsWith("docs/", StringComparison.Ordinal);
 
     // A package README is read with that package's root namespace in scope (FluxCurator.Core for FluxCurator.Core):
     // the namespaces of its public types with the fewest segments.
@@ -217,7 +253,12 @@ public class ReadmeSnippetCompileTests
         var tree = CSharpSyntaxTree.ParseText(Program(code, document), new CSharpParseOptions(LanguageVersion.Latest));
         var compilation = CSharpCompilation.Create(
             "ReadmeSnippet", [tree], References(),
-            new CSharpCompilationOptions(OutputKind.ConsoleApplication, nullableContextOptions: NullableContextOptions.Enable));
+            new CSharpCompilationOptions(
+                // A block that only declares types (a test class, a service) is a library, not a program.
+                tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.GlobalStatementSyntax>().Any()
+                    ? OutputKind.ConsoleApplication
+                    : OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: NullableContextOptions.Enable));
         return compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error).ToImmutableArray();
     }
 

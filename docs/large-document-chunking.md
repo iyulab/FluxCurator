@@ -59,7 +59,7 @@ Each chunk includes hierarchy information:
 ```csharp
 foreach (var chunk in chunks)
 {
-    // Hierarchy level (1 = top, 6 = deepest)
+    // Hierarchy level: the header depth (1 = #, 6 = ######); 0 = text before the first header
     var level = chunk.Metadata.Custom?["HierarchyLevel"];
 
     // Parent chunk reference for tree traversal
@@ -105,6 +105,8 @@ var options = new ChunkOptions
 
 ## Best Practices
 
+The option snippets below are the body of a `WithChunkingOptions(opt => { ... })` callback.
+
 ### 1. Use Structure-Aware Chunking
 
 ```csharp
@@ -137,10 +139,10 @@ var result = await curator.PreprocessAsync(pdfText);
 ### 4. Use Streaming for Memory Efficiency
 
 ```csharp
-// Process chunks as they're generated
+// Handle chunks as they're generated
 await foreach (var chunk in curator.ChunkStreamAsync(largeText))
 {
-    await ProcessChunkAsync(chunk);
+    Console.WriteLine($"{chunk.ChunkIndex}: {chunk.Content.Length} chars");
 }
 ```
 
@@ -180,9 +182,7 @@ var curator = new Curator()
 FluxCurator processes **text**, not document files directly. Use [FileFlux](https://github.com/iyulab/FileFlux) to extract text from document files first:
 
 ```csharp
-// Step 1: Extract text from Korean document using FileFlux
-var fileFlux = new FileFlux.DocumentProcessor();
-var document = await fileFlux.ProcessAsync("보고서.docx");
+// Step 1: Extract the text with FileFlux (see the FileFlux README); here it is already in `extractedText`
 
 // Step 2: Chunk the extracted text with FluxCurator
 var curator = new Curator()
@@ -196,7 +196,7 @@ var curator = new Curator()
         opt.EnableChunkBalancing = true;
     });
 
-var chunks = await curator.ChunkAsync(document.Text);
+var chunks = await curator.ChunkAsync(extractedText);
 ```
 
 ### Korean-Specific Features
@@ -229,18 +229,15 @@ var chunks = await curator.ChunkAsync(document.Text);
 
 ## Integration with FileFlux
 
-When processing documents through FileFlux, structure hints are automatically passed:
+FileFlux extracts text from document files and chunks it through FluxCurator's `IChunkerFactory`; see
+[FileFlux Integration](fileflux-integration.md). If you extract the text yourself, chunk it with the large-document
+preset:
 
 ```csharp
-// FileFlux provides document structure
-var fileFlux = new FileFlux.DocumentProcessor();
-var document = await fileFlux.ProcessAsync("large-manual.pdf");
-
-// FluxCurator uses structure for intelligent chunking
 var curator = new Curator()
     .WithChunkingOptions(ChunkOptions.ForLargeDocument);
 
-var chunks = await curator.ChunkAsync(document.Text);
+var chunks = await curator.ChunkAsync(extractedText);
 ```
 
 ## Troubleshooting
@@ -278,13 +275,8 @@ opt.EnableChunkBalancing = true;
 
 ## Performance Considerations
 
-| Document Size | Approximate Processing Time | Memory Usage |
-|---------------|----------------------------|--------------|
-| 10K tokens | < 100ms | ~10MB |
-| 100K tokens | < 1s | ~50MB |
-| 1M tokens | < 10s | ~200MB |
-
-For very large documents, use streaming:
+Rule-based chunking is linear in the text size and needs no tokenizer or model. For very large documents, use
+streaming so chunks are handled as they are produced:
 ```csharp
 await foreach (var chunk in curator.ChunkStreamAsync(text))
 {

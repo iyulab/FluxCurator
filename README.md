@@ -8,19 +8,19 @@ Clean, protect, and chunk your text for RAG pipelines — no dependencies requir
 
 ## Overview
 
-FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 14 languages and 13 countries' national IDs.
+FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 13 languages and 13 countries' national IDs.
 
 **Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds DI support and semantic chunking capabilities via external `IEmbedder` injection.
 
 ## Features
 
 - **Text Refinement** - Clean noisy text by removing blank lines, duplicates, empty list markers, and custom patterns
-- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs, credit cards across 14 languages
+- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs, credit cards across 13 countries
 - **Content Filtering** - Filter harmful content with customizable rules and blocklists
 - **Smart Chunking** - Rule-based chunking (sentence, paragraph, token)
 - **Semantic Chunking** - Embedding-based chunking for semantic boundaries
 - **Hierarchical Chunking** - Document structure-aware chunking with parent-child relationships
-- **Multi-Language Support** - 14 languages including Korean, English, Japanese, Chinese, Vietnamese, Thai
+- **Multi-Language Support** - 13 languages including Korean, English, Japanese, Chinese, Vietnamese, Thai
 - **National ID Validation** - Checksum validation for 13 countries including SSN (US), RRN (Korea), Aadhaar (India), SIN (Canada)
 - **Streaming Support** - Memory-efficient streaming chunk generation via `ChunkStreamAsync`
 - **Pipeline Processing** - Combine filtering, masking, and chunking in one call
@@ -277,15 +277,15 @@ See [Large Document Chunking Guide](docs/large-document-chunking.md) for detaile
 
 ## Supported Languages
 
-FluxCurator includes language profiles for accurate sentence detection and token estimation:
+FluxCurator includes language profiles for accurate sentence detection and token estimation. A tag with a region
+(`zh-TW`, `pt-BR`, `en-US`) uses the profile of its language:
 
 | Language | Code | Features |
 |----------|------|----------|
 | Korean | `ko` | 습니다체/해요체 endings, Korean sentence markers |
 | English | `en` | Standard sentence boundaries |
 | Japanese | `ja` | Japanese sentence endings (。、！？) |
-| Chinese (Simplified) | `zh` | Chinese punctuation |
-| Chinese (Traditional) | `zh-TW` | Traditional Chinese support |
+| Chinese (Simplified and Traditional) | `zh` | Chinese punctuation |
 | Spanish | `es` | Spanish punctuation |
 | French | `fr` | French punctuation |
 | German | `de` | German punctuation |
