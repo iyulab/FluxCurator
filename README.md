@@ -39,16 +39,23 @@ dotnet add package FluxCurator.Core
 
 ## Quick Start
 
+The entry point is `Curator` (namespace `FluxCurator`). Options, chunks and results live in `FluxCurator.Core.Domain`,
+and the extension interfaces (`IEmbedder`, `IChunkerFactory`, `IPIIMasker`, …) in `FluxCurator.Core.Core`. The examples
+below assume these three `using` lines:
+
 ### Basic Chunking
 
 ```csharp
-using FluxCurator;
-using FluxCurator.Core.Domain;
+using FluxCurator;                 // Curator, AddFluxCurator
+using FluxCurator.Core.Core;       // IEmbedder, IChunkerFactory, IPIIDetector, ...
+using FluxCurator.Core.Domain;     // ChunkOptions, DocumentChunk, PIIMaskingOptions, ...
 
-// Create curator with default options
-var curator = new FluxCurator();
+var text = "FluxCurator splits text into chunks. Each chunk keeps whole sentences. It works without a tokenizer.";
 
-// Chunk text using sentence strategy
+// Create a curator with default options
+var curator = new Curator();
+
+// Chunk the text (the default strategy is Auto)
 var chunks = await curator.ChunkAsync(text);
 
 foreach (var chunk in chunks)
@@ -63,20 +70,19 @@ foreach (var chunk in chunks)
 
 ```csharp
 // Memory-efficient streaming for large texts
-var curator = new FluxCurator();
+var curator = new Curator();
 
 await foreach (var chunk in curator.ChunkStreamAsync(largeText))
 {
-    // Process chunks as they are generated
+    // Handle each chunk as soon as it is produced
     Console.WriteLine($"Chunk {chunk.ChunkIndex}: {chunk.Content.Length} chars");
-    await ProcessChunkAsync(chunk);
 }
 ```
 
 ### Dependency Injection
 
 ```csharp
-// Program.cs or Startup.cs
+// Program.cs
 services.AddFluxCurator(options =>
 {
     options.DefaultChunkOptions = ChunkOptions.ForRAG;
@@ -84,7 +90,7 @@ services.AddFluxCurator(options =>
     options.EnableContentFiltering = true;
 });
 
-// With external IEmbedder for semantic chunking
+// With an external IEmbedder for semantic chunking
 services.AddSingleton<IEmbedder>(myEmbedder);  // Register your embedder first
 services.AddFluxCurator(options =>
 {
@@ -99,21 +105,14 @@ services.AddFluxCurator(options =>
 ### Using IChunkerFactory
 
 ```csharp
-// Inject IChunkerFactory for flexible chunker creation
-public class MyService
+// Inject IChunkerFactory (registered by AddFluxCurator) for flexible chunker creation
+public class MyService(IChunkerFactory chunkerFactory)
 {
-    private readonly IChunkerFactory _chunkerFactory;
-
-    public MyService(IChunkerFactory chunkerFactory)
+    public Task<IReadOnlyList<DocumentChunk>> ProcessAsync(string text)
     {
-        _chunkerFactory = chunkerFactory;
-    }
-
-    public async Task<IReadOnlyList<DocumentChunk>> ProcessAsync(string text)
-    {
-        // Create specific chunker
-        var chunker = _chunkerFactory.CreateChunker(ChunkingStrategy.Hierarchical);
-        return await chunker.ChunkAsync(text, ChunkOptions.Default);
+        // Create a specific chunker
+        var chunker = chunkerFactory.CreateChunker(ChunkingStrategy.Hierarchical);
+        return chunker.ChunkAsync(text, ChunkOptions.Default);
     }
 }
 ```
@@ -122,18 +121,11 @@ public class MyService
 
 ```csharp
 // Clean noisy text before processing
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithTextRefinement(TextRefineOptions.Standard);
 
 var result = await curator.PreprocessAsync(rawText);
 // Pipeline: Refine → Filter → Mask → Chunk
-
-// Use presets for specific content types
-TextRefineOptions.Light        // Minimal: empty list markers, trim, collapse blanks
-TextRefineOptions.Standard     // Default: + remove duplicates
-TextRefineOptions.ForWebContent  // Web-optimized: aggressive cleaning
-TextRefineOptions.ForKorean    // Korean: removes 댓글 sections, copyright
-TextRefineOptions.ForPdfContent  // PDF: removes page numbers
 
 // Custom patterns
 var options = new TextRefineOptions
@@ -146,11 +138,22 @@ var options = new TextRefineOptions
 };
 ```
 
+Presets for specific content types:
+
+| Preset | Use |
+|--------|-----|
+| `TextRefineOptions.Light` | Minimal: empty list markers, trim, collapse blanks |
+| `TextRefineOptions.Standard` | Default: `Light` + remove duplicate lines |
+| `TextRefineOptions.ForWebContent` | Web pages: aggressive cleaning |
+| `TextRefineOptions.ForKorean` | Korean: removes 댓글 sections, copyright lines |
+| `TextRefineOptions.ForPdfContent` | PDF text: removes page numbers |
+| `TextRefineOptions.ForTokenOptimization` / `ForAggressiveTokenOptimization` | Reduce tokens before embedding |
+
 ### PII Masking
 
 ```csharp
 // Enable PII masking
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithPIIMasking();
 
 // Mask PII in text
@@ -163,14 +166,14 @@ Console.WriteLine(result.MaskedText);
 
 ```csharp
 // Auto-detect PII for all supported languages
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithPIIMasking(PIIMaskingOptions.Default);
 
-var result = curator.MaskPII("SSN: 123-45-6789, RRN: 901231-1234567");
+var result = curator.MaskPII("SSN: 536-22-1234, RRN: 901231-1234567");
 // Output: "SSN: [NATIONAL_ID], RRN: [NATIONAL_ID]"
 
 // Detect for specific language
-var koreanCurator = new FluxCurator()
+var koreanCurator = new Curator()
     .WithPIIMasking(PIIMaskingOptions.ForLanguage("ko"));
 
 var krResult = koreanCurator.MaskPII("주민등록번호: 901231-1234567");
@@ -178,14 +181,14 @@ var krResult = koreanCurator.MaskPII("주민등록번호: 901231-1234567");
 // Validates using Modulo-11 checksum algorithm
 
 // Detect for multiple languages
-var multiCurator = new FluxCurator()
+var multiCurator = new Curator()
     .WithPIIMasking(PIIMaskingOptions.ForLanguages("en-US", "ko", "pt-BR"));
 ```
 
 ### Hierarchical Chunking
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(opt =>
     {
         opt.Strategy = ChunkingStrategy.Hierarchical;
@@ -210,7 +213,7 @@ foreach (var chunk in chunks)
 
 ```csharp
 // Complete preprocessing pipeline
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithTextRefinement(TextRefineOptions.Standard)
     .WithContentFiltering()
     .WithPIIMasking(PIIMaskingOptions.ForLanguages("en", "ko", "ja"))
@@ -220,14 +223,14 @@ var curator = new FluxCurator()
 var result = await curator.PreprocessAsync(text);
 
 Console.WriteLine(result.GetSummary());
-// Output: "Produced 5 chunk(s). Filtered 2 content item(s). Masked 3 PII item(s)."
+// e.g. "Produced 5 chunk(s). Text refined. Filtered 2 content item(s). Masked 3 PII item(s)."
 ```
 
 ### Semantic Chunking
 
 ```csharp
 // Requires an IEmbedder implementation (e.g., OpenAI, LMSupply, etc.)
-var curator = new FluxCurator()
+var curator = new Curator()
     .UseEmbedder(myEmbedder)  // Inject your IEmbedder implementation
     .WithChunkingOptions(opt =>
     {
@@ -256,7 +259,7 @@ For documents with 50K+ tokens, use hierarchical chunking with the `ForLargeDocu
 
 ```csharp
 // Use the preset for large documents
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(ChunkOptions.ForLargeDocument);
 
 var chunks = await curator.ChunkAsync(largeDocument);
@@ -342,15 +345,8 @@ var options = new ChunkOptions
     SemanticSimilarityThreshold = 0.5f
 };
 
-// Preset configurations
-ChunkOptions.Default           // General purpose (512 target, 1024 max)
-ChunkOptions.ForRAG            // Optimized for RAG (512 target, semantic)
-ChunkOptions.ForKorean         // Optimized for Korean text
-ChunkOptions.ForLargeDocument  // Large docs (50K+ tokens, hierarchical)
-ChunkOptions.ForShortContext   // Short-context models (MiniLM, BGE-small)
-ChunkOptions.ForMediumContext  // Medium-context models (e5, BGE-base)
-ChunkOptions.ForLongContext    // Long-context models (OpenAI, Cohere)
-ChunkOptions.FixedSize(256, 32)  // Fixed token size with overlap
+// Or start from a preset (compared below)
+var fixedSize = ChunkOptions.FixedSize(256, 32);  // Fixed token size with overlap
 ```
 
 ### Preset Comparison by Embedding Model
@@ -375,6 +371,7 @@ Choose the right preset based on your embedding model's context window:
 |----------|----------------|
 | `Token` | `[EMAIL]`, `[PHONE]` |
 | `Asterisk` | `****@****.com` |
+| `Character` | each character replaced by the mask character |
 | `Redact` | `[REDACTED]` |
 | `Partial` | `jo**@ex****.com` |
 | `Hash` | `[HASH:a1b2c3d4]` |
@@ -389,9 +386,24 @@ FluxCurator is designed for extensibility. You can add custom PII detectors for 
 Implement `IPIIDetector` or extend `PIIDetectorBase` for pattern-based detection:
 
 ```csharp
-using FluxCurator.Core.Core;
+using FluxCurator;
 using FluxCurator.Core.Domain;
 using FluxCurator.Core.Infrastructure.PII;
+
+// Register and use via PIIMasker
+var masker = new PIIMasker(PIIMaskingOptions.Default);
+masker.RegisterDetector(new EmployeeIdDetector());
+
+var result = masker.Mask("Contact employee EMP-123456 for details.");
+// Output: "Contact employee [PII] for details."
+
+// Or register directly on the curator
+var curator = new Curator()
+    .WithPIIMasking()
+    .RegisterPIIDetector(new EmployeeIdDetector());
+
+var curatorResult = curator.MaskPII("Contact employee EMP-123456 for details.");
+// Output: "Contact employee [PII] for details."
 
 public class EmployeeIdDetector : PIIDetectorBase
 {
@@ -407,90 +419,62 @@ public class EmployeeIdDetector : PIIDetectorBase
         return true;
     }
 }
-
-// Register and use via PIIMasker
-var masker = new PIIMasker(PIIMaskingOptions.Default);
-masker.RegisterDetector(new EmployeeIdDetector());
-
-var result = masker.Mask("Contact employee EMP-123456 for details.");
-// Output: "Contact employee [PII] for details."
-
-// Or register directly via FluxCurator
-var curator = new FluxCurator()
-    .WithPIIMasking()
-    .RegisterPIIDetector(new EmployeeIdDetector());
-
-var curatorResult = curator.MaskPII("Contact employee EMP-123456 for details.");
-// Output: "Contact employee [PII] for details."
 ```
 
 ### Custom National ID Detector
 
-Extend `NationalIdDetectorBase` to add support for additional countries:
+Extend `NationalIdDetectorBase` to add a country the library does not cover (the 13 in the table above are built in
+and registered by default):
 
 ```csharp
-using FluxCurator.Core.Core;
+using FluxCurator.Core.Domain;
+using FluxCurator.Core.Infrastructure.PII;
 using FluxCurator.Core.Infrastructure.PII.NationalId;
 
-public class IndiaAadhaarDetector : NationalIdDetectorBase
-{
-    public override string LanguageCode => "hi";
-    public override string NationalIdType => "Aadhaar";
-    public override string FormatDescription => "12 digits with optional spaces";
-    public override string CountryName => "India";
-    public override string Name => "India Aadhaar Detector";
+// Register with the national ID registry
+var registry = new NationalIdRegistry();
+registry.Register(new SingaporeNricDetector());
 
-    // Pattern: 1234 5678 9012 or 123456789012
-    protected override string Pattern => @"\d{4}\s?\d{4}\s?\d{4}";
+var masker = new PIIMasker(PIIMaskingOptions.ForLanguage("en-SG"), registry);
+
+public class SingaporeNricDetector : NationalIdDetectorBase
+{
+    public override string LanguageCode => "en-SG";
+    public override string NationalIdType => "NRIC";
+    public override string FormatDescription => "Letter, 7 digits, check letter";
+    public override string CountryName => "Singapore";
+    public override string Name => "Singapore NRIC Detector";
+
+    // Pattern: S1234567D
+    protected override string Pattern => @"[STFGM]\d{7}[A-Z]";
 
     protected override bool ValidateMatch(string value, out float confidence)
     {
         var normalized = NormalizeValue(value);
-
-        if (normalized.Length != 12 || !normalized.All(char.IsDigit))
+        if (normalized.Length != 9)
         {
             confidence = 0.0f;
             return false;
         }
 
-        // Implement Verhoeff checksum validation
-        if (!ValidateVerhoeffChecksum(normalized))
-        {
-            confidence = 0.6f;
-            return true; // Still flag as PII
-        }
-
-        confidence = 0.98f;
-        return true;
-    }
-
-    private static bool ValidateVerhoeffChecksum(string number)
-    {
-        // Verhoeff algorithm implementation
-        // ...
+        // A real detector verifies the check letter here
+        confidence = 0.9f;
         return true;
     }
 }
-
-// Register with the national ID registry
-var registry = new NationalIdRegistry();
-registry.Register(new IndiaAadhaarDetector());
-
-var masker = new PIIMasker(
-    PIIMaskingOptions.ForLanguage("hi"),
-    registry);
 ```
 
 ### Dependency Injection with Custom Detectors
 
 ```csharp
-// Register custom registry with additional detectors
+using FluxCurator.Core.Infrastructure.PII;
+using FluxCurator.Core.Infrastructure.PII.NationalId;
+
+// Register a registry that also knows your own detectors
 services.AddSingleton<INationalIdRegistry>(sp =>
 {
-    var registry = new NationalIdRegistry();
-    registry.Register(new IndiaAadhaarDetector());
-    registry.Register(new CanadaSINDetector());
-    registry.Register(new AustraliaTFNDetector());
+    var registry = new NationalIdRegistry();   // the built-in detectors are already registered
+    registry.Register(new SingaporeNricDetector());
     return registry;
 });
 
@@ -548,64 +532,17 @@ FluxCurator is part of the Iyulab open-source RAG ecosystem:
 
 ### FileFlux Integration
 
-```csharp
-using FileFlux.Infrastructure.Strategies;
-using FileFlux.Infrastructure.Adapters;
-
-// Use FluxCurator chunking in FileFlux
-var chunkerFactory = new ChunkerFactory(embedder);
-var strategy = new FluxCuratorChunkingStrategy(
-    chunkerFactory,
-    ChunkingStrategy.Hierarchical);
-
-var chunks = await strategy.ChunkAsync(documentContent, options);
-
-// Convert between chunk types
-var fileFluxChunks = fluxCuratorChunks.ToFileFluxChunks();
-var curatorChunks = fileFluxChunks.ToFluxCuratorChunks();
-```
+FileFlux delegates its chunking to FluxCurator through `IChunkerFactory`; the adapter types live in the FileFlux
+package. See [FileFlux Integration](docs/fileflux-integration.md).
 
 ## Project Structure
 
 ```
 FluxCurator/
 ├── src/
-│   ├── FluxCurator.Core/              # Zero-dependency core
-│   │   ├── Core/                      # Interfaces
-│   │   │   ├── IChunker.cs
-│   │   │   ├── IChunkerFactory.cs
-│   │   │   ├── IEmbedder.cs
-│   │   │   └── ILanguageProfile.cs
-│   │   ├── Domain/                    # Models
-│   │   │   ├── ChunkOptions.cs
-│   │   │   ├── DocumentChunk.cs
-│   │   │   ├── ChunkingStrategy.cs
-│   │   │   └── PIIMaskingOptions.cs
-│   │   └── Infrastructure/            # Implementations
-│   │       ├── Chunking/
-│   │       │   ├── ChunkerBase.cs
-│   │       │   ├── SentenceChunker.cs
-│   │       │   ├── ParagraphChunker.cs
-│   │       │   ├── TokenChunker.cs
-│   │       │   └── HierarchicalChunker.cs
-│   │       └── Languages/
-│   │           ├── LanguageProfileRegistry.cs
-│   │           ├── KoreanLanguageProfile.cs
-│   │           └── EnglishLanguageProfile.cs
-│   │
-│   └── FluxCurator/                   # Main package
-│       ├── Infrastructure/
-│       │   └── Chunking/
-│       │       ├── ChunkerFactory.cs  # Factory with all strategies
-│       │       └── SemanticChunker.cs # Requires IEmbedder
-│       ├── ServiceCollectionExtensions.cs
-│       └── FluxCurator.cs             # Main API
-│
-└── docs/                              # Documentation
-    ├── getting-started.md
-    ├── chunking-strategies.md
-    ├── di-integration.md
-    └── fileflux-integration.md
+│   ├── FluxCurator.Core/   # Zero-dependency core: interfaces (Core/), models (Domain/), chunkers, PII, filters, languages
+│   └── FluxCurator/        # Main package: Curator, DI registration, semantic chunking (requires IEmbedder)
+└── docs/                   # Guides
 ```
 
 ## Documentation
@@ -616,24 +553,6 @@ FluxCurator/
 - [Dependency Injection](docs/di-integration.md) - DI configuration and patterns
 - [FileFlux Integration](docs/fileflux-integration.md) - Integration with FileFlux
 
-## Roadmap
-
-- [x] Core chunking strategies (Sentence, Paragraph, Token)
-- [x] 11 language profiles for text processing
-- [x] Language detection
-- [x] Batch processing
-- [x] Multilingual PII masking (10 countries)
-- [x] Content filtering
-- [x] Semantic chunking
-- [x] Hierarchical chunking
-- [x] Dependency Injection support
-- [x] FileFlux integration
-- [x] Text refinement with Korean support
-- [x] Additional national ID detectors (India Aadhaar, Canada SIN, Australia TFN)
-- [x] Additional language profiles (Vietnamese, Thai)
-- [x] Custom detector registration via `RegisterPIIDetector`
-- [x] Streaming chunk support via `ChunkStreamAsync`
-
 ## FAQ
 
 **Q: How do I process large documents (100K+ tokens)?**
@@ -641,7 +560,7 @@ FluxCurator/
 Use `ChunkingStrategy.Hierarchical` with the `ForLargeDocument` preset. It recognizes document structure (#, ##, ###) and chunks at section boundaries while preserving context.
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(ChunkOptions.ForLargeDocument);
 ```
 
@@ -692,11 +611,10 @@ Yes. When documents are processed through FileFlux, structure hints (headings, s
 FluxCurator processes text, not document files directly. Use FileFlux to extract text first, then chunk with FluxCurator:
 
 ```csharp
-// 1. Extract text from document using FileFlux
-var document = await fileFlux.ProcessAsync("보고서.docx");
+// 1. Extract the text with FileFlux (see the FileFlux README); here it is already in `extractedText`
 
 // 2. Chunk the extracted Korean text
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithTextRefinement(TextRefineOptions.ForKorean)
     .WithChunkingOptions(opt =>
     {
@@ -705,14 +623,14 @@ var curator = new FluxCurator()
         opt.EnableChunkBalancing = true;
     });
 
-var chunks = await curator.ChunkAsync(document.Text);
+var chunks = await curator.ChunkAsync(extractedText);
 ```
 
 See [Large Document Chunking Guide](docs/large-document-chunking.md#korean-document-processing) for detailed Korean document processing examples.
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome — open an issue or a pull request. Release notes are in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

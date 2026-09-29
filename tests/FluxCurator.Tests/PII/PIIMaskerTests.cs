@@ -547,6 +547,44 @@ public class PIIMaskerTests
         Assert.Throws<ArgumentNullException>(() => masker.RegisterDetector(null!));
     }
 
+    [Fact]
+    public void RegisterDetector_CustomType_RunsWithTheDefaultTypesToMask()
+    {
+        // Custom is in no TypesToMask preset (not even All); registering the detector is the opt-in.
+        var masker = new PIIMasker(PIIMaskingOptions.Default);
+        masker.RegisterDetector(new EmployeeIdDetector());
+
+        var result = masker.Mask("Contact employee EMP-123456 for details.");
+
+        Assert.Equal("Contact employee [PII] for details.", result.MaskedText);
+        Assert.True(masker.ContainsPII("EMP-654321"));
+    }
+
+    [Fact]
+    public void RegisterDetector_DoesNotWidenTheBuiltInSelection()
+    {
+        // TypesToMask still selects among the built-in detectors: IPAddress is registered by default but not in Common.
+        var masker = new PIIMasker(PIIMaskingOptions.Default);
+        masker.RegisterDetector(new EmployeeIdDetector());
+
+        var result = masker.Mask("Server 192.168.0.10, employee EMP-123456.");
+
+        Assert.Equal("Server 192.168.0.10, employee [PII].", result.MaskedText);
+    }
+
+    private sealed class EmployeeIdDetector : PIIDetectorBase
+    {
+        public override PIIType PIIType => PIIType.Custom;
+        public override string Name => "Employee ID Detector";
+        protected override string Pattern => @"EMP-\d{6}";
+
+        protected override bool ValidateMatch(string value, out float confidence)
+        {
+            confidence = 0.95f;
+            return true;
+        }
+    }
+
     #endregion
 
     #region Mask — Text Preservation

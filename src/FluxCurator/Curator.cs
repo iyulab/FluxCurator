@@ -22,7 +22,7 @@ using global::FluxCurator.Infrastructure.Chunking;
 /// <example>
 /// Basic usage with fluent builder:
 /// <code>
-/// var curator = FluxCurator.Create()
+/// var curator = Curator.Create()
 ///     .WithTextRefinement(TextRefineOptions.ForKorean)
 ///     .WithPIIMasking()
 ///     .WithChunkingOptions(ChunkOptions.ForKorean)
@@ -34,7 +34,7 @@ using global::FluxCurator.Infrastructure.Chunking;
 /// <example>
 /// With semantic chunking:
 /// <code>
-/// var curator = FluxCurator.Create()
+/// var curator = Curator.Create()
 ///     .UseEmbedder(myEmbedder)
 ///     .WithChunkingOptions(opt => opt.Strategy = ChunkingStrategy.Semantic)
 ///     .Build();
@@ -43,22 +43,23 @@ using global::FluxCurator.Infrastructure.Chunking;
 /// </code>
 /// </example>
 /// </remarks>
-public sealed class FluxCurator : IFluxCurator
+public sealed class Curator : IFluxCurator
 {
     private IEmbedder? _embedder;
     private ChunkOptions _chunkOptions = ChunkOptions.Default;
     private PIIMaskingOptions _piiOptions = PIIMaskingOptions.Default;
     private ContentFilterOptions _filterOptions = ContentFilterOptions.Default;
     private PIIMasker? _piiMasker;
+    private readonly List<IPIIDetector> _registeredPIIDetectors = [];
     private ContentFilterManager? _filterManager;
     private TextRefineOptions? _refineOptions;
     private readonly TextRefiner _refiner = TextRefiner.Instance;
     private readonly Dictionary<ChunkingStrategy, IChunker> _chunkers = new();
 
     /// <summary>
-    /// Creates a new FluxCurator instance with default configuration.
+    /// Creates a new <see cref="Curator"/> with default configuration.
     /// </summary>
-    public FluxCurator()
+    public Curator()
     {
         // Register built-in chunkers
         RegisterChunker(ChunkingStrategy.Sentence, new SentenceChunker());
@@ -68,17 +69,17 @@ public sealed class FluxCurator : IFluxCurator
     }
 
     /// <summary>
-    /// Creates a new FluxCurator builder for fluent configuration.
+    /// Creates a new <see cref="Curator"/> for fluent configuration.
     /// </summary>
-    /// <returns>A new FluxCurator instance for configuration.</returns>
-    public static FluxCurator Create() => new();
+    /// <returns>A new <see cref="Curator"/> for configuration.</returns>
+    public static Curator Create() => new();
 
     /// <summary>
     /// Finalizes the configuration and returns this instance.
     /// This method is optional but completes the fluent builder pattern.
     /// </summary>
     /// <returns>This configured instance.</returns>
-    public FluxCurator Build() => this;
+    public Curator Build() => this;
 
     #region Properties
 
@@ -116,7 +117,7 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="embedder">The embedder implementation.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator UseEmbedder(IEmbedder embedder)
+    public Curator UseEmbedder(IEmbedder embedder)
     {
         _embedder = embedder ?? throw new ArgumentNullException(nameof(embedder));
         RegisterChunker(ChunkingStrategy.Semantic, new SemanticChunker(embedder));
@@ -128,7 +129,7 @@ public sealed class FluxCurator : IFluxCurator
     /// Text refinement cleans and normalizes raw text before further processing.
     /// </summary>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithTextRefinement()
+    public Curator WithTextRefinement()
     {
         _refineOptions = global::FluxCurator.Core.Domain.TextRefineOptions.Light;
         return this;
@@ -139,7 +140,7 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="options">The text refinement options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithTextRefinement(TextRefineOptions options)
+    public Curator WithTextRefinement(TextRefineOptions options)
     {
         _refineOptions = options ?? throw new ArgumentNullException(nameof(options));
         return this;
@@ -150,7 +151,7 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="configure">Action to configure options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithTextRefinement(Action<TextRefineOptions> configure)
+    public Curator WithTextRefinement(Action<TextRefineOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);
         _refineOptions = new TextRefineOptions();
@@ -163,7 +164,7 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="options">The chunking options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithChunkingOptions(ChunkOptions options)
+    public Curator WithChunkingOptions(ChunkOptions options)
     {
         _chunkOptions = options ?? throw new ArgumentNullException(nameof(options));
         return this;
@@ -174,7 +175,7 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="configure">Action to configure options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithChunkingOptions(Action<ChunkOptions> configure)
+    public Curator WithChunkingOptions(Action<ChunkOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);
         configure(_chunkOptions);
@@ -185,9 +186,9 @@ public sealed class FluxCurator : IFluxCurator
     /// Enables PII masking with default options.
     /// </summary>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithPIIMasking()
+    public Curator WithPIIMasking()
     {
-        _piiMasker = new PIIMasker(_piiOptions);
+        _piiMasker = CreatePIIMasker();
         return this;
     }
 
@@ -196,10 +197,10 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="options">The PII masking options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithPIIMasking(PIIMaskingOptions options)
+    public Curator WithPIIMasking(PIIMaskingOptions options)
     {
         _piiOptions = options ?? throw new ArgumentNullException(nameof(options));
-        _piiMasker = new PIIMasker(_piiOptions);
+        _piiMasker = CreatePIIMasker();
         return this;
     }
 
@@ -208,11 +209,11 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="configure">Action to configure PII options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithPIIMasking(Action<PIIMaskingOptions> configure)
+    public Curator WithPIIMasking(Action<PIIMaskingOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);
         configure(_piiOptions);
-        _piiMasker = new PIIMasker(_piiOptions);
+        _piiMasker = CreatePIIMasker();
         return this;
     }
 
@@ -223,19 +224,29 @@ public sealed class FluxCurator : IFluxCurator
     /// <param name="detector">The custom detector to register.</param>
     /// <returns>This instance for fluent chaining.</returns>
     /// <exception cref="InvalidOperationException">Thrown when PII masking is not enabled.</exception>
-    public FluxCurator RegisterPIIDetector(IPIIDetector detector)
+    public Curator RegisterPIIDetector(IPIIDetector detector)
     {
         ArgumentNullException.ThrowIfNull(detector);
         EnsurePIIMaskerConfigured();
+        _registeredPIIDetectors.Add(detector);
         _piiMasker!.RegisterDetector(detector);
         return this;
+    }
+
+    // A later WithPIIMasking(...) rebuilds the masker; the detectors registered so far carry over to it.
+    private PIIMasker CreatePIIMasker()
+    {
+        var masker = new PIIMasker(_piiOptions);
+        foreach (var detector in _registeredPIIDetectors)
+            masker.RegisterDetector(detector);
+        return masker;
     }
 
     /// <summary>
     /// Enables content filtering with default options.
     /// </summary>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithContentFiltering()
+    public Curator WithContentFiltering()
     {
         _filterManager = new ContentFilterManager(_filterOptions);
         return this;
@@ -246,7 +257,7 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="options">The content filtering options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithContentFiltering(ContentFilterOptions options)
+    public Curator WithContentFiltering(ContentFilterOptions options)
     {
         _filterOptions = options ?? throw new ArgumentNullException(nameof(options));
         _filterManager = new ContentFilterManager(_filterOptions);
@@ -258,7 +269,7 @@ public sealed class FluxCurator : IFluxCurator
     /// </summary>
     /// <param name="configure">Action to configure filtering options.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator WithContentFiltering(Action<ContentFilterOptions> configure)
+    public Curator WithContentFiltering(Action<ContentFilterOptions> configure)
     {
         ArgumentNullException.ThrowIfNull(configure);
         configure(_filterOptions);
@@ -272,7 +283,7 @@ public sealed class FluxCurator : IFluxCurator
     /// <param name="strategy">The strategy to register for.</param>
     /// <param name="chunker">The chunker implementation.</param>
     /// <returns>This instance for fluent chaining.</returns>
-    public FluxCurator RegisterChunker(ChunkingStrategy strategy, IChunker chunker)
+    public Curator RegisterChunker(ChunkingStrategy strategy, IChunker chunker)
     {
         ArgumentNullException.ThrowIfNull(chunker);
         _chunkers[strategy] = chunker;

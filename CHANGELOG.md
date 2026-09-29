@@ -4,6 +4,26 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [0.10.0] - Unreleased
+
+### Changed
+- **Breaking: the entry-point class `FluxCurator` is now `Curator`.** The class shared its name with its namespace, so
+  `new FluxCurator()` after `using FluxCurator;` did not compile (CS0118) and callers had to write
+  `global::FluxCurator.FluxCurator`. `IFluxCurator`, `Create()` and every method are unchanged.
+  Migration: replace `FluxCurator.FluxCurator` / `new FluxCurator()` with `Curator` / `new Curator()`.
+
+### Fixed
+- **A registered PII detector now masks.** `PIIMasker.RegisterDetector` and `Curator.RegisterPIIDetector` added the
+  detector under its `PIIType`, and `TypesToMask` then filtered it out: a custom detector reports `PIIType.Custom`,
+  which no preset includes (not even `PIIType.All`), so it never ran and nothing reported it. A registered detector
+  now always runs; `TypesToMask` selects among the built-in detectors only.
+- **`WithPIIMasking(...)` after `RegisterPIIDetector` keeps the detector.** Reconfiguring the options rebuilt the
+  masker without the detectors registered on the curator.
+- **The README's code compiles.** Every C# block is compiled against the current API in CI. The fixes: the entry point
+  (above), the three `using` lines the examples need (stated once in Quick Start), a sample SSN the detector treats as
+  a known test number, custom detector examples whose type declarations followed their statements, a custom national
+  ID example for a country the library already covers, and a FileFlux example naming types from another package.
+
 ## [0.9.1] - 2026-09-23
 
 ### Changed

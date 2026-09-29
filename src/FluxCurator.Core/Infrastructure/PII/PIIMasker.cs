@@ -12,7 +12,12 @@ using FluxCurator.Core.Infrastructure.PII.NationalId;
 /// </summary>
 public sealed class PIIMasker : IPIIMasker
 {
+    // Built-in detectors, selected by Options.TypesToMask.
     private readonly Dictionary<PIIType, List<IPIIDetector>> _detectors = new();
+
+    // Detectors the caller registered. Registering one is the opt-in, so they run whatever TypesToMask says -
+    // a custom detector usually reports PIIType.Custom, which no TypesToMask preset (not even All) includes.
+    private readonly List<IPIIDetector> _registeredDetectors = [];
     private readonly INationalIdRegistry _nationalIdRegistry;
 
     /// <summary>
@@ -46,6 +51,11 @@ public sealed class PIIMasker : IPIIMasker
     public void RegisterDetector(IPIIDetector detector)
     {
         ArgumentNullException.ThrowIfNull(detector);
+        _registeredDetectors.Add(detector);
+    }
+
+    private void AddBuiltInDetector(IPIIDetector detector)
+    {
         if (!_detectors.TryGetValue(detector.PIIType, out var list))
         {
             list = [];
@@ -61,19 +71,8 @@ public sealed class PIIMasker : IPIIMasker
             return [];
 
         var allMatches = new List<PIIMatch>();
-
-        foreach (var (type, detectors) in _detectors)
-        {
-            // Skip if this type is not in the mask list
-            if (!Options.TypesToMask.HasFlag(type))
-                continue;
-
-            foreach (var detector in detectors)
-            {
-                var matches = detector.Detect(text);
-                allMatches.AddRange(matches);
-            }
-        }
+        foreach (var detector in ActiveDetectors())
+            allMatches.AddRange(detector.Detect(text));
 
         // Resolve overlaps FIRST (prefer longer/more specific matches),
         // then filter by confidence. This prevents shorter partial matches
@@ -89,20 +88,14 @@ public sealed class PIIMasker : IPIIMasker
         if (string.IsNullOrEmpty(text))
             return false;
 
-        foreach (var (type, detectors) in _detectors)
-        {
-            if (!Options.TypesToMask.HasFlag(type))
-                continue;
-
-            foreach (var detector in detectors)
-            {
-                if (detector.ContainsPII(text))
-                    return true;
-            }
-        }
-
-        return false;
+        return ActiveDetectors().Any(detector => detector.ContainsPII(text));
     }
+
+    // Built-in detectors of the types in TypesToMask, then every registered detector.
+    private IEnumerable<IPIIDetector> ActiveDetectors() =>
+        _detectors.Where(entry => Options.TypesToMask.HasFlag(entry.Key))
+            .SelectMany(entry => entry.Value)
+            .Concat(_registeredDetectors);
 
     /// <inheritdoc/>
     public PIIMaskingResult Mask(string text)
@@ -133,10 +126,10 @@ public sealed class PIIMasker : IPIIMasker
     private void RegisterDefaultDetectors()
     {
         // Global detectors (language-agnostic)
-        RegisterDetector(new EmailDetector());
-        RegisterDetector(new PhoneDetector());
-        RegisterDetector(new CreditCardDetector());
-        RegisterDetector(new IPAddressDetector());
+        AddBuiltInDetector(new EmailDetector());
+        AddBuiltInDetector(new PhoneDetector());
+        AddBuiltInDetector(new CreditCardDetector());
+        AddBuiltInDetector(new IPAddressDetector());
 
         // Register national ID detectors based on language codes
         RegisterNationalIdDetectors();
@@ -154,7 +147,7 @@ public sealed class PIIMasker : IPIIMasker
         {
             foreach (var detector in _nationalIdRegistry.GetAllDetectors())
             {
-                RegisterDetector(detector);
+                AddBuiltInDetector(detector);
             }
             return;
         }
@@ -165,7 +158,7 @@ public sealed class PIIMasker : IPIIMasker
             var detectors = _nationalIdRegistry.GetDetectors([languageCode]);
             foreach (var detector in detectors)
             {
-                RegisterDetector(detector);
+                AddBuiltInDetector(detector);
             }
         }
     }

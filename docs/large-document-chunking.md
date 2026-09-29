@@ -15,7 +15,7 @@ FluxCurator addresses these challenges with **Hierarchical Chunking** and **Chun
 
 ```csharp
 // Recommended settings for large documents
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(opt =>
     {
         opt.Strategy = ChunkingStrategy.Hierarchical;
@@ -33,7 +33,7 @@ var chunks = await curator.ChunkAsync(largeDocument);
 Or use the preset:
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(ChunkOptions.ForLargeDocument);
 ```
 
@@ -127,7 +127,7 @@ opt.OverlapSize = (int)(opt.TargetChunkSize * 0.2);
 Clean noisy content before chunking:
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithTextRefinement(TextRefineOptions.ForPdfContent)
     .WithChunkingOptions(ChunkOptions.ForLargeDocument);
 
@@ -151,7 +151,7 @@ FluxCurator includes a specialized Korean language profile for accurate sentence
 ### Basic Korean Text Chunking
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(opt =>
     {
         opt.Strategy = ChunkingStrategy.Hierarchical;
@@ -171,7 +171,7 @@ Or use the Korean preset combined with hierarchical strategy:
 var options = ChunkOptions.ForKorean;
 options.Strategy = ChunkingStrategy.Hierarchical;
 
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(options);
 ```
 
@@ -185,7 +185,7 @@ var fileFlux = new FileFlux.DocumentProcessor();
 var document = await fileFlux.ProcessAsync("보고서.docx");
 
 // Step 2: Chunk the extracted text with FluxCurator
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithTextRefinement(TextRefineOptions.ForKorean)  // Remove Korean noise patterns
     .WithChunkingOptions(opt =>
     {
@@ -237,7 +237,7 @@ var fileFlux = new FileFlux.DocumentProcessor();
 var document = await fileFlux.ProcessAsync("large-manual.pdf");
 
 // FluxCurator uses structure for intelligent chunking
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithChunkingOptions(ChunkOptions.ForLargeDocument);
 
 var chunks = await curator.ChunkAsync(document.Text);

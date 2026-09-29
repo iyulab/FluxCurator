@@ -57,8 +57,8 @@ public sealed class PIIMaskingOptions
     public IReadOnlyList<string> LanguageCodes { get; set; } = ["auto"];
 
     /// <summary>
-    /// Gets or sets which PII types to detect and mask.
-    /// Default: Common (Email, Phone, NationalId, CreditCard).
+    /// Gets or sets which PII types the built-in detectors detect and mask.
+    /// Default: Common (Email, Phone, NationalId, CreditCard). Detectors you register yourself always run.
     /// </summary>
     public PIIType TypesToMask { get; set; } = PIIType.Common;
 

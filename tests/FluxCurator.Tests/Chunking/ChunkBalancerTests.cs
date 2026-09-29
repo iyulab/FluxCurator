@@ -360,7 +360,7 @@ public class ChunkBalancerTests
     public async Task FluxCurator_WithBalancingEnabled_AppliesBalancing()
     {
         // Arrange
-        var curator = new global::FluxCurator.FluxCurator()
+        var curator = new Curator()
             .WithChunkingOptions(opt =>
             {
                 opt.Strategy = ChunkingStrategy.Sentence;
@@ -390,7 +390,7 @@ public class ChunkBalancerTests
     public async Task FluxCurator_WithBalancingDisabled_SkipsBalancing()
     {
         // Arrange
-        var curator = new global::FluxCurator.FluxCurator()
+        var curator = new Curator()
             .WithChunkingOptions(opt =>
             {
                 opt.Strategy = ChunkingStrategy.Sentence;

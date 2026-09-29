@@ -35,7 +35,7 @@ using FluxCurator;
 using FluxCurator.Core.Domain;
 
 // Create curator with default options
-var curator = new FluxCurator();
+var curator = new Curator();
 
 // Chunk text using sentence strategy
 var chunks = await curator.ChunkAsync(text);
@@ -162,7 +162,7 @@ chunk.Metadata.Custom               // Custom key-value pairs
 Protect sensitive information:
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithPIIMasking();
 
 var result = curator.MaskPII("Email: test@example.com, Phone: 010-1234-5678");
@@ -179,7 +179,7 @@ foreach (var detection in result.Detections)
 ### Korean-Specific PII
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithPIIMasking(PIIMaskingOptions.ForLanguage("ko"));
 
 // Detects and validates Korean RRN (Resident Registration Number)
@@ -192,7 +192,7 @@ var result = curator.MaskPII("RRN: 901231-1234567");
 Filter harmful or unwanted content:
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithContentFiltering();
 
 var result = curator.Filter(text);
@@ -207,7 +207,7 @@ if (result.WasFiltered)
 Combine multiple preprocessing steps:
 
 ```csharp
-var curator = new FluxCurator()
+var curator = new Curator()
     .WithContentFiltering()
     .WithPIIMasking()
     .WithChunkingOptions(ChunkOptions.ForKorean);

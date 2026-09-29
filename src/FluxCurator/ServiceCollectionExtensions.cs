@@ -60,7 +60,7 @@ public static class ServiceCollectionExtensions
         // Register FluxCurator via IFluxCurator interface (each request gets new instance)
         services.TryAdd(new ServiceDescriptor(typeof(global::FluxCurator.Core.IFluxCurator), sp =>
         {
-            var curator = new FluxCurator();
+            var curator = new Curator();
 
             // Configure embedder if available
             var embedder = sp.GetService<IEmbedder>();
