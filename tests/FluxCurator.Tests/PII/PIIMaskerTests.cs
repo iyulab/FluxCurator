@@ -129,6 +129,19 @@ public class PIIMaskerTests
     #region ContainsPII
 
     [Fact]
+    public void ContainsPII_AgreesWithMask_WhenEveryCandidateIsBelowMinConfidence()
+    {
+        const string text = "reach me at test@example.com";
+        var confidence = new PIIMasker().Detect(text).Single().Confidence;
+        var masker = new PIIMasker(new PIIMaskingOptions { MinConfidence = confidence + 0.01f });
+
+        var masked = masker.Mask(text);
+
+        Assert.Equal(text, masked.MaskedText);
+        Assert.False(masker.ContainsPII(text), "ContainsPII must not report what Mask leaves unmasked");
+    }
+
+    [Fact]
     public void ContainsPII_WithEmail_ReturnsTrue()
     {
         var masker = new PIIMasker();

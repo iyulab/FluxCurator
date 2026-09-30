@@ -26,6 +26,8 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 - **`ContainsPII` on a detector no longer stops at the first candidate.** When the first pattern match failed
   validation, `PIIDetectorBase.ContainsPII` returned `false` even if a later match in the same text was valid.
 
+- **`PIIMasker.ContainsPII` answers what `Mask` would mask.** It asked each detector directly, so it ignored
+  `MinConfidence` and overlap resolution and could report PII in a text that `Mask` returned unchanged.
 - **The README no longer lists `BankAccount` and `URL` as detected.** No built-in detector reports either type; the
   enum values remain for custom detectors.
 

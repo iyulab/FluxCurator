@@ -83,13 +83,12 @@ public sealed class PIIMasker : IPIIMasker
     }
 
     /// <inheritdoc/>
-    public bool ContainsPII(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-            return false;
-
-        return ActiveDetectors().Any(detector => detector.ContainsPII(text));
-    }
+    /// <remarks>
+    /// Answers exactly what <see cref="Mask"/> would act on — the same overlap resolution and
+    /// <see cref="PIIMaskingOptions.MinConfidence"/> — so a text reported as containing PII is never
+    /// returned unchanged by <see cref="Mask"/>.
+    /// </remarks>
+    public bool ContainsPII(string text) => Detect(text).Count > 0;
 
     // Built-in detectors of the types in TypesToMask, then every registered detector.
     private IEnumerable<IPIIDetector> ActiveDetectors() =>
