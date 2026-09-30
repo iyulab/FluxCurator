@@ -25,7 +25,7 @@ public sealed class CanadaSINDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: 9 digits with optional spaces or hyphens
-        @"\d{3}[\s-]?\d{3}[\s-]?\d{3}";
+        NumberStart + @"\d{3}[\s-]?\d{3}[\s-]?\d{3}" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

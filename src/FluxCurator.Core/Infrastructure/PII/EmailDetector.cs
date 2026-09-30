@@ -14,8 +14,17 @@ public sealed class EmailDetector : PIIDetectorBase
     public override string Name => "Email Detector";
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// Local parts and domain labels may use any script (RFC 6531 addresses such as <c>홍길동@회사.kr</c> and
+    /// internationalised domain names). The match starts where the run of local-part characters starts, so it never
+    /// begins inside a longer word, and scanning stays linear on long runs that contain no <c>@</c>. An ASCII top-level
+    /// domain ends at the first character that is not an ASCII letter or digit, so a particle written directly after
+    /// the address (<c>홍길동@회사.kr로</c>) is not taken into it.
+    /// </remarks>
     protected override string Pattern =>
-        @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}";
+        @"(?<![\p{L}\p{M}\p{N}._%+-])" +
+        @"[\p{L}\p{M}\p{N}._%+-]+@[\p{L}\p{M}\p{N}.-]+\." +
+        @"(?:[A-Za-z]{2,63}" + TokenEnd + @"|[\p{L}\p{M}-[A-Za-z]]{2,63})";
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

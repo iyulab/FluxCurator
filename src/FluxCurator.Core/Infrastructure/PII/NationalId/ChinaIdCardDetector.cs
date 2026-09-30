@@ -36,7 +36,7 @@ public sealed class ChinaIdCardDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: 17 digits + check character (digit or X)
-        @"\d{17}[\dXx]";
+        NumberStart + @"\d{17}[\dXx]" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

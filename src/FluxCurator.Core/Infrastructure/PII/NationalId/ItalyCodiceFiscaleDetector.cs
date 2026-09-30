@@ -68,7 +68,7 @@ public sealed class ItalyCodiceFiscaleDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: 6 letters + 2 digits + letter + 2 digits + letter + 3 alphanumeric + letter
-        @"[A-Za-z]{6}\d{2}[A-EHLMPRSTa-ehlmprst]\d{2}[A-Za-z]\d{3}[A-Za-z]";
+        NumberStart + @"[A-Za-z]{6}\d{2}[A-EHLMPRSTa-ehlmprst]\d{2}[A-Za-z]\d{3}[A-Za-z]" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

@@ -26,12 +26,12 @@ public sealed class GermanyIdDetector : NationalIdDetectorBase
 
     /// <inheritdoc/>
     protected override string Pattern =>
-        @"(?:" +
+        NumberStart + @"(?:" +
             // Personalausweis: 1 letter + 8 alphanumeric + 1 check digit
             @"[A-Z][A-Z0-9]{8}\d|" +
             // Steuer-ID: 11 digits
             @"\d{11}" +
-        @")";
+        @")" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

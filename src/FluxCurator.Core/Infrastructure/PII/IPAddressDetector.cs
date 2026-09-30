@@ -18,15 +18,18 @@ public sealed class IPAddressDetector : PIIDetectorBase
 
     /// <inheritdoc/>
     protected override string Pattern =>
-        @"(?:" +
-            // IPv4: 1.2.3.4 through 255.255.255.255
-            @"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\b" +
+        TokenStart + @"(?:" +
+            // IPv4: 1.2.3.4 through 255.255.255.255, not a slice of a longer dotted run such as 1.2.3.4.5
+            @"(?<!\d\.)(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?!\.\d)" +
             @"|" +
             // IPv6: broad capture, validated by IPAddress.TryParse()
-            // Matches hex groups with colons, including :: compressed forms
-            @"(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}" +
-            @"|::(?:[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6})?" +
-        @")";
+            // Matches hex groups with colons, including :: compressed forms, but not a slice of a longer
+            // colon-separated run
+            @"(?<![0-9a-fA-F]:)(?:" +
+                @"(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}" +
+                @"|::(?:[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6})?" +
+            @")(?!:[0-9a-fA-F])" +
+        @")" + TokenEnd;
 
     /// <inheritdoc/>
     protected override RegexOptions RegexOptions => RegexOptions.Compiled;

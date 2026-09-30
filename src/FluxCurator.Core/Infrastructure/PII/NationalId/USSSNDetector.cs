@@ -27,7 +27,7 @@ public sealed class USSSNDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: XXX-XX-XXXX with optional separators
-        @"\d{3}[-\s]?\d{2}[-\s]?\d{4}";
+        NumberStart + @"\d{3}[-\s]?\d{2}[-\s]?\d{4}" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

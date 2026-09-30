@@ -302,12 +302,19 @@ FluxCurator includes language profiles for accurate sentence detection and token
 
 | Type | Description | Validation |
 |------|-------------|------------|
-| `Email` | Email addresses | TLD validation |
-| `Phone` | Phone numbers (International) | E.164 format validation |
+| `Email` | Email addresses, including non-ASCII local parts and domains (`홍길동@회사.kr`) | Local-part and TLD validation |
+| `Phone` | Korean mobile, landline (incl. `(02) 555-1234`) and service numbers; US `(234) 567-8900` / `234-567-8900`; `+` international | Prefix and length validation |
 | `CreditCard` | Credit card numbers | Luhn algorithm |
 | `BankAccount` | Bank account numbers | Format validation |
 | `IPAddress` | IPv4 and IPv6 addresses | Format validation |
 | `URL` | URLs and web addresses | Format validation |
+
+Every built-in detector matches whole values only: a run of digits or ASCII letters is never reported in part, so
+timestamps, order numbers, hashes and UUIDs are not masked as phone numbers or IDs. A value written directly
+next to text in a script without spaces (`연락처010-1234-5678로`) is still detected. A bare run of ten digits
+is not treated as a US phone number; write it with separators. A custom detector deriving from
+`PIIDetectorBase` gets the same behaviour by placing `TokenStart`/`TokenEnd` (or, for numeric IDs,
+`NumberStart`/`NumberEnd`) around its `Pattern`.
 
 ### National ID Types by Country
 

@@ -51,7 +51,7 @@ public sealed class UKNINODetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: AB 12 34 56 C or AB123456C with optional spaces
-        @"[A-Za-z]{2}[\s]?\d{2}[\s]?\d{2}[\s]?\d{2}[\s]?[A-Da-d]";
+        NumberStart + @"[A-Za-z]{2}[\s]?\d{2}[\s]?\d{2}[\s]?\d{2}[\s]?[A-Da-d]" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

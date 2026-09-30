@@ -11,6 +11,37 @@ public abstract class PIIDetectorBase : IPIIDetector
 {
     private Regex? _compiledPattern;
 
+    /// <summary>
+    /// Lookbehind asserting that a match does not start in the middle of a run of ASCII letters or digits.
+    /// Place it at the start of <see cref="Pattern"/> so a detector never reports a slice of a longer token
+    /// such as an identifier, a hash or a timestamp.
+    /// </summary>
+    /// <remarks>
+    /// Unlike <c>\b</c>, which treats every Unicode letter as a word character, this only looks at ASCII
+    /// letters and digits, so a value glued to text in a script written without spaces
+    /// (for example <c>연락처010-1234-5678로</c>) still matches.
+    /// </remarks>
+    protected const string TokenStart = "(?<![0-9A-Za-z])";
+
+    /// <summary>
+    /// Lookahead asserting that a match does not end in the middle of a run of ASCII letters or digits.
+    /// The counterpart of <see cref="TokenStart"/>; place it at the end of <see cref="Pattern"/>.
+    /// </summary>
+    protected const string TokenEnd = "(?![0-9A-Za-z])";
+
+    /// <summary>
+    /// <see cref="TokenStart"/>, and additionally not a group of a longer hyphenated number: a match does not start
+    /// right after a digit and a hyphen. Use it for numeric identifiers, so the last group of
+    /// <c>550e8400-e29b-41d4-a716-446655440000</c> is not read as a twelve-digit ID on its own.
+    /// </summary>
+    protected const string NumberStart = TokenStart + "(?<![0-9]-)";
+
+    /// <summary>
+    /// The counterpart of <see cref="NumberStart"/>: <see cref="TokenEnd"/>, and a match does not end right before
+    /// a hyphen and a digit.
+    /// </summary>
+    protected const string NumberEnd = "(?!-[0-9])" + TokenEnd;
+
     /// <inheritdoc/>
     public abstract PIIType PIIType { get; }
 
@@ -62,8 +93,13 @@ public abstract class PIIDetectorBase : IPIIDetector
         if (string.IsNullOrEmpty(text))
             return false;
 
-        var match = CompiledPattern.Match(text);
-        return match.Success && ValidateMatch(match.Value, out _);
+        foreach (Match match in CompiledPattern.Matches(text))
+        {
+            if (ValidateMatch(match.Value, out _))
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

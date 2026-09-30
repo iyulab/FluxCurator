@@ -4,6 +4,30 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [0.10.1] - Unreleased
+
+### Fixed
+- **PII detectors no longer mask part of a longer number or identifier.** Patterns had no boundaries, so a slice of
+  a longer run was reported: a 13-digit timestamp, order number or amount as a 12-digit national ID, a hex trace ID
+  or hash as a German ID, a UUID as a phone number or (its last group) a 12-digit ID. Every built-in detector now
+  matches whole values only - not inside a run of ASCII letters or digits, and a numeric ID not as one group of a
+  longer hyphenated number (IPv4 and IPv6 likewise not inside a longer dotted or colon-separated run). A value glued
+  to text in a script without spaces, such as `연락처010-1234-5678로`, is still detected; IPv4 addresses in that
+  position were previously missed and now match too.
+- **A bare run of ten digits is no longer masked as a phone number.** The US format accepted `9876543210` with no
+  separators, so counts, sizes and amounts were masked. US numbers now need separators or a parenthesised area code
+  (`234-567-8900`, `(234) 567-8900`); unseparated Korean mobile and landline numbers (`01012345678`) still match.
+- **Phone numbers with a parenthesised area code are detected.** `(02) 555-1234`, `(031) 123-4567` and
+  `(051)1234-5678` were not matched at all.
+- **Email addresses with non-ASCII characters are detected.** Local parts and domains in any script (`홍길동@회사.kr`,
+  `user@회사.한국`, `müller@example.de`) were not matched. A particle written directly after an ASCII top-level
+  domain (`홍길동@회사.kr로`) is not taken into the address.
+- **`ContainsPII` on a detector no longer stops at the first candidate.** When the first pattern match failed
+  validation, `PIIDetectorBase.ContainsPII` returned `false` even if a later match in the same text was valid.
+
+Custom detectors deriving from `PIIDetectorBase` are unaffected; they can opt into the same matching with the new
+protected `TokenStart`/`TokenEnd` and `NumberStart`/`NumberEnd` constants.
+
 ## [0.10.0] - 2026-09-30
 
 ### Changed

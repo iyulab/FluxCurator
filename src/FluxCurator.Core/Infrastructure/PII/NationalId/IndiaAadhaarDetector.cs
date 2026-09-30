@@ -53,7 +53,7 @@ public sealed class IndiaAadhaarDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: 12 digits with optional spaces or hyphens
-        @"\d{4}[\s-]?\d{4}[\s-]?\d{4}";
+        NumberStart + @"\d{4}[\s-]?\d{4}[\s-]?\d{4}" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

@@ -30,7 +30,7 @@ public sealed class KoreaRRNDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: YYMMDD-GNNNNNN or YYMMDDGNNNNNN
-        @"\d{6}[-\s]?[1-8]\d{6}";
+        NumberStart + @"\d{6}[-\s]?[1-8]\d{6}" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

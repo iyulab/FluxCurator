@@ -29,7 +29,7 @@ public sealed class JapanMyNumberDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: 12 consecutive digits, optionally with spaces or hyphens
-        @"\d{4}[-\s]?\d{4}[-\s]?\d{4}";
+        NumberStart + @"\d{4}[-\s]?\d{4}[-\s]?\d{4}" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

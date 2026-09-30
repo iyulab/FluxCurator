@@ -29,12 +29,12 @@ public sealed class SpainDNIDetector : NationalIdDetectorBase
 
     /// <inheritdoc/>
     protected override string Pattern =>
-        @"(?:" +
+        NumberStart + @"(?:" +
             // DNI: 8 digits + letter
             @"\d{8}[A-Za-z]|" +
             // NIE: X/Y/Z + 7 digits + letter
             @"[XYZxyz]\d{7}[A-Za-z]" +
-        @")";
+        @")" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

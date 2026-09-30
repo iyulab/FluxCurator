@@ -17,9 +17,11 @@ public sealed class PhoneDetector : PIIDetectorBase
 
     /// <inheritdoc/>
     protected override string Pattern =>
-        @"(?:" +
+        NumberStart + @"(?:" +
             // Korean mobile: 010-1234-5678, 010.1234.5678, 01012345678
             @"01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}|" +
+            // Korean landline with a parenthesised area code: (02) 555-1234, (031) 123-4567
+            @"\(0[2-6][1-5]?\)\s?\d{3,4}[-.\s]?\d{4}|" +
             // Korean landline: 02-1234-5678, 031-123-4567
             @"0[2-6][1-5]?[-.\s]?\d{3,4}[-.\s]?\d{4}|" +
             // Korean toll-free/special: 1588-1234, 1544-1234, 080-123-4567
@@ -27,9 +29,10 @@ public sealed class PhoneDetector : PIIDetectorBase
             @"080[-.\s]?\d{3,4}[-.\s]?\d{4}|" +
             // International format with country code: +82-10-1234-5678, +1-234-567-8900
             @"\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,4}(?:[-.\s]?\d{1,4})?|" +
-            // US format: (123) 456-7890, 123-456-7890
-            @"\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}" +
-        @")";
+            // US format: (123) 456-7890, 123-456-7890. Separators are required: a bare run of ten
+            // digits is as likely to be a count, an amount or an identifier as a phone number.
+            @"(?:\(\d{3}\)\s?|\d{3}[-.\s])\d{3}[-.\s]\d{4}" +
+        @")" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

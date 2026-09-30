@@ -16,14 +16,14 @@ public sealed class CreditCardDetector : PIIDetectorBase
 
     /// <inheritdoc/>
     protected override string Pattern =>
-        @"(?:" +
+        NumberStart + @"(?:" +
             // Standard 16-digit with separators: 1234-5678-9012-3456
             @"\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}|" +
             // American Express format: 3xxx-xxxxxx-xxxxx (15 digits)
             @"3[47]\d{2}[-\s]?\d{6}[-\s]?\d{5}|" +
             // Continuous digits (13-19 digits)
             @"\d{13,19}" +
-        @")";
+        @")" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

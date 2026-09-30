@@ -27,7 +27,7 @@ public sealed class BrazilCPFDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         // Format: XXX.XXX.XXX-XX with optional separators
-        @"\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}";
+        NumberStart + @"\d{3}[.\s]?\d{3}[.\s]?\d{3}[-.\s]?\d{2}" + NumberEnd;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)
