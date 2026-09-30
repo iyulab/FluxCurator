@@ -26,6 +26,9 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 - **`ContainsPII` on a detector no longer stops at the first candidate.** When the first pattern match failed
   validation, `PIIDetectorBase.ContainsPII` returned `false` even if a later match in the same text was valid.
 
+- **The README no longer lists `BankAccount` and `URL` as detected.** No built-in detector reports either type; the
+  enum values remain for custom detectors.
+
 Custom detectors deriving from `PIIDetectorBase` are unaffected; they can opt into the same matching with the new
 protected `TokenStart`/`TokenEnd` and `NumberStart`/`NumberEnd` constants.
 

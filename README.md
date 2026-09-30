@@ -305,9 +305,11 @@ FluxCurator includes language profiles for accurate sentence detection and token
 | `Email` | Email addresses, including non-ASCII local parts and domains (`홍길동@회사.kr`) | Local-part and TLD validation |
 | `Phone` | Korean mobile, landline (incl. `(02) 555-1234`) and service numbers; US `(234) 567-8900` / `234-567-8900`; `+` international | Prefix and length validation |
 | `CreditCard` | Credit card numbers | Luhn algorithm |
-| `BankAccount` | Bank account numbers | Format validation |
 | `IPAddress` | IPv4 and IPv6 addresses | Format validation |
-| `URL` | URLs and web addresses | Format validation |
+
+`PIIType.BankAccount` and `PIIType.URL` exist for custom detectors, but **no built-in detector reports them** —
+selecting them in `TypesToMask` (including `All`) masks nothing of those kinds until you register a detector for
+them.
 
 Every built-in detector matches whole values only: a run of digits or ASCII letters is never reported in part, so
 timestamps, order numbers, hashes and UUIDs are not masked as phone numbers or IDs. A value written directly
