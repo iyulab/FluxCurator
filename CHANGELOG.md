@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [0.10.2] - Unreleased
+
+### Fixed
+- **An IPv6 address after a label that ends in a hex letter is detected.** `id:2001:db8::1` and `addr:fe80::1` were
+  missed because the letter before the colon was read as the end of a longer address. An address inside a longer hex
+  run (`deadbeef:2001:db8::1`) is still not reported.
+- The email detector no longer lists Korean second-level domains it could never compare; `co.kr`-style domains keep
+  the same confidence through their `kr` suffix.
+
 ## [0.10.1] - 2026-09-30
 
 ### Fixed

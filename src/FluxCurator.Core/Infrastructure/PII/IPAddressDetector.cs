@@ -24,8 +24,9 @@ public sealed class IPAddressDetector : PIIDetectorBase
             @"|" +
             // IPv6: broad capture, validated by IPAddress.TryParse()
             // Matches hex groups with colons, including :: compressed forms, but not a slice of a longer
-            // colon-separated run
-            @"(?<![0-9a-fA-F]:)(?:" +
+            // colon-separated run. The run before the colon counts only when it is a whole hex token, so a
+            // label such as "id:" (ending in a hex letter) does not hide the address after it
+            @"(?<!(?<![0-9A-Za-z])[0-9a-fA-F]+:)(?:" +
                 @"(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}" +
                 @"|::(?:[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6})?" +
             @")(?!:[0-9a-fA-F])" +

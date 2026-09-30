@@ -82,10 +82,10 @@ public sealed class EmailDetector : PIIDetectorBase
             "kr", "cn", "au", "ca", "in", "br", "ru"
         };
 
-        // Korean specific TLDs
+        // Korean TLDs (a second-level domain such as co.kr ends in kr, which is what is compared)
         var koreanTlds = new HashSet<string>
         {
-            "kr", "한국", "co.kr", "or.kr", "go.kr", "ac.kr", "ne.kr"
+            "kr", "한국"
         };
 
         if (koreanTlds.Contains(loweredTld))

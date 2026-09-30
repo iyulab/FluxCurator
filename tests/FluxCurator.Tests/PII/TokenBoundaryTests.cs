@@ -21,6 +21,18 @@ public class TokenBoundaryTests
     private static string Describe(IReadOnlyList<PIIMatch> matches) =>
         string.Join(", ", matches.Select(m => $"{m.Type}:{m.Value} ({m.Confidence:0.00})"));
 
+    [Theory]
+    [InlineData("user@company.co.kr")]
+    [InlineData("user@school.ac.kr")]
+    [InlineData("user@naver.kr")]
+    public void Detect_KoreanDomains_HaveTheKoreanDomainConfidence(string email)
+    {
+        var match = Assert.Single(AllTypesAllCountries(minConfidence: 0f).Detect($"mail {email} now"));
+
+        Assert.Equal(email, match.Value);
+        Assert.Equal(1.0f, match.Confidence);
+    }
+
     #region Slices of longer tokens are not PII
 
     [Theory]
@@ -79,6 +91,7 @@ public class TokenBoundaryTests
     [Theory]
     [InlineData("1.2.3.4.5")]
     [InlineData("1:2:3:4:5:6:7:8:9")]
+    [InlineData("deadbeef:2001:db8::1")]                          // an IPv6 tail inside a longer hex run
     [InlineData("2026-09-30-901231-1234567")]
     [InlineData("901231-1234567-01")]
     public void Detect_SegmentOfLongerDottedOrHyphenatedNumber_NotReported(string text)
@@ -93,6 +106,8 @@ public class TokenBoundaryTests
     [InlineData("range 10.0.0.1-10.0.0.254", "10.0.0.1")]
     [InlineData("range 10.0.0.1-10.0.0.254", "10.0.0.254")]
     [InlineData("call (234) 567-8900", "(234) 567-8900")]
+    [InlineData("id:2001:db8::1", "2001:db8::1")]              // label ending in a hex letter
+    [InlineData("addr:fe80::1", "fe80::1")]
     public void Detect_ValueAfterLabelOrInRange_StillReported(string text, string expected)
     {
         var matches = AllTypesAllCountries().Detect(text);
