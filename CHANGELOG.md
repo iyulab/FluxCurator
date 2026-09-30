@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
-## [0.10.2] - Unreleased
+## [0.10.2] - 2026-09-30
 
 ### Fixed
 - **An IPv6 address after a label that ends in a hex letter is detected.** `id:2001:db8::1` and `addr:fe80::1` were
