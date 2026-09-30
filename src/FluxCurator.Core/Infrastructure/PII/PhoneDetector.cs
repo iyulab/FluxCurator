@@ -24,8 +24,9 @@ public sealed class PhoneDetector : PIIDetectorBase
             @"\(0[2-6][1-5]?\)\s?\d{3,4}[-.\s]?\d{4}|" +
             // Korean landline: 02-1234-5678, 031-123-4567
             @"0[2-6][1-5]?[-.\s]?\d{3,4}[-.\s]?\d{4}|" +
-            // Korean toll-free/special: 1588-1234, 1544-1234, 080-123-4567
-            @"1(?:5[0-9]{2}|6[0-9]{2}|8[0-9]{2})[-.\s]?\d{4}|" +
+            // Korean toll-free/special: 1588-1234, 1544-1234, 080-123-4567. The four-digit service numbers
+            // need a separator: a bare 15xxxxxx / 16xxxxxx / 18xxxxxx is far more often an amount or a size.
+            @"1(?:5[0-9]{2}|6[0-9]{2}|8[0-9]{2})[-.\s]\d{4}|" +
             @"080[-.\s]?\d{3,4}[-.\s]?\d{4}|" +
             // International format with country code: +82-10-1234-5678, +1-234-567-8900
             @"\+\d{1,3}[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,4}(?:[-.\s]?\d{1,4})?|" +

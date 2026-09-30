@@ -14,9 +14,10 @@ breaking changes, and each one is marked **Breaking** with a migration note.
   longer hyphenated number (IPv4 and IPv6 likewise not inside a longer dotted or colon-separated run). A value glued
   to text in a script without spaces, such as `연락처010-1234-5678로`, is still detected; IPv4 addresses in that
   position were previously missed and now match too.
-- **A bare run of ten digits is no longer masked as a phone number.** The US format accepted `9876543210` with no
-  separators, so counts, sizes and amounts were masked. US numbers now need separators or a parenthesised area code
-  (`234-567-8900`, `(234) 567-8900`); unseparated Korean mobile and landline numbers (`01012345678`) still match.
+- **Bare runs of digits are no longer masked as phone numbers.** The US format accepted `9876543210`, and the Korean
+  service-number format `15000000` or `16777216`, with no separators, so counts, sizes and amounts were masked. US
+  numbers now need separators or a parenthesised area code (`234-567-8900`, `(234) 567-8900`) and service numbers a
+  separator (`1588-1234`); unseparated Korean mobile and landline numbers (`01012345678`) still match.
 - **Phone numbers with a parenthesised area code are detected.** `(02) 555-1234`, `(031) 123-4567` and
   `(051)1234-5678` were not matched at all.
 - **Email addresses with non-ASCII characters are detected.** Local parts and domains in any script (`홍길동@회사.kr`,

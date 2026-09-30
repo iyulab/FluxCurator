@@ -32,6 +32,9 @@ public class TokenBoundaryTests
     [InlineData("bytes=9876543210")]                          // bare 10-digit count
     [InlineData("sha1 da39a3ee5e6b4b0d3255bfef95601890afd80709")]
     [InlineData("build 20260930123456789")]
+    [InlineData("amount=15000000")]                           // bare 8 digits with a service-number prefix
+    [InlineData("size=16777216")]
+    [InlineData("id 18001234")]
     public void Mask_MachineToken_ReportsNothing(string text)
     {
         var result = AllTypesAllCountries().Mask(text);
