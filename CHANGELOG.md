@@ -75,7 +75,7 @@ protected `TokenStart`/`TokenEnd` and `NumberStart`/`NumberEnd` constants.
 ## [0.9.1] - 2026-09-23
 
 ### Changed
-- Re-pinned sibling package(s) `Flux.Abstractions` 0.25.0 -> 0.26.0 — re-consumption of already-consumed iyulab packages via `check-pin-drift.ps1 -Fix`. No source changes.
+- Re-pinned sibling package(s) `Flux.Abstractions` 0.25.0 -> 0.26.0 — re-consumption of already-consumed iyulab packages. No source changes.
 
 ## [0.9.0] - 2026-09-21
 
