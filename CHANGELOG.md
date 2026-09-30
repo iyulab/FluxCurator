@@ -13,6 +13,9 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 - The email detector no longer lists Korean second-level domains it could never compare; `co.kr`-style domains keep
   the same confidence through their `kr` suffix.
 
+### Changed
+- **Documentation describes behaviour only.** The README's architecture diagram shows a generic application layer.
+
 ## [0.10.1] - 2026-09-30
 
 ### Fixed
