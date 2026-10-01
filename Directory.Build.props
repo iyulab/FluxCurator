@@ -10,7 +10,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Version>0.10.3</Version>
+    <Version>0.10.4</Version>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -31,6 +31,7 @@
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)src\logo.png" Pack="true" PackagePath="\" Visible="false" />
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="\" Visible="false" Condition="Exists('$(MSBuildThisFileDirectory)LICENSE')" />
   </ItemGroup>
 
   <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)../../local-packages')">
