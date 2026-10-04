@@ -11,7 +11,7 @@ namespace FluxCurator.Tests;
 /// </summary>
 public class OptionsReachabilityRosterTests
 {
-    private static readonly Assembly[] Libraries =
+    internal static readonly Assembly[] Libraries =
     [
         Assembly.Load("FluxCurator"),
         Assembly.Load("FluxCurator.Core"),
