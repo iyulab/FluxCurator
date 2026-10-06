@@ -91,6 +91,13 @@ public sealed class ChunkOptions
     public bool PreserveSectionHeaders { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets whether Markdown pipe tables are kept whole: a table becomes its own chunk when it fits
+    /// <see cref="MaxChunkSize"/>, and otherwise is split only between rows with its header repeated in every piece.
+    /// Applies to every strategy created by the chunker factory. Default: true.
+    /// </summary>
+    public bool PreserveTables { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets the similarity threshold for semantic chunking.
     /// Lower values create more chunks at semantic boundaries.
     /// Range: 0.0 to 1.0. Default: 0.5.

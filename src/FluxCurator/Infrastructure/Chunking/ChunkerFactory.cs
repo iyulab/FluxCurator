@@ -93,16 +93,18 @@ public sealed class ChunkerFactory : IChunkerFactory
 
     private void RegisterBuiltInChunkers()
     {
-        // Register core chunkers (no embedder required)
-        RegisterChunker(ChunkingStrategy.Token, () => new TokenChunker());
-        RegisterChunker(ChunkingStrategy.Sentence, () => new SentenceChunker());
-        RegisterChunker(ChunkingStrategy.Paragraph, () => new ParagraphChunker());
-        RegisterChunker(ChunkingStrategy.Hierarchical, () => new HierarchicalChunker());
+        // Register core chunkers (no embedder required). Built-in strategies keep tables whole
+        // (TableAwareChunker; ChunkOptions.PreserveTables opts out per call); a chunker registered by the
+        // caller is returned as registered.
+        RegisterChunker(ChunkingStrategy.Token, () => new TableAwareChunker(new TokenChunker()));
+        RegisterChunker(ChunkingStrategy.Sentence, () => new TableAwareChunker(new SentenceChunker()));
+        RegisterChunker(ChunkingStrategy.Paragraph, () => new TableAwareChunker(new ParagraphChunker()));
+        RegisterChunker(ChunkingStrategy.Hierarchical, () => new TableAwareChunker(new HierarchicalChunker()));
 
         // Register semantic chunker if embedder is available
         if (_embedder != null)
         {
-            RegisterChunker(ChunkingStrategy.Semantic, () => new SemanticChunker(_embedder));
+            RegisterChunker(ChunkingStrategy.Semantic, () => new TableAwareChunker(new SemanticChunker(_embedder)));
         }
     }
 }

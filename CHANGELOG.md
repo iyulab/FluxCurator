@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [0.11.0] - Unreleased
+
+### Changed
+- **Tables stay whole in every chunking strategy.** A Markdown pipe table becomes its own chunk when it fits
+  `MaxChunkSize`; a larger one is split only between rows, with its header and delimiter rows repeated at the top of
+  every piece, so a chunk holding table rows always names its columns and no chunk or overlap starts inside a row.
+  Table chunks carry `Metadata.Custom` `table`, `table_index` (which table of the input), `table_piece`/`table_pieces`
+  and `table_row_start`/`table_row_end`.
+  Applies to the built-in strategies from `ChunkerFactory` (a chunker you register yourself is returned as is);
+  `ChunkOptions.PreserveTables = false` restores the previous behaviour. `TableAwareChunker` wraps any `IChunker`.
+
 ## [0.10.4] - 2026-10-02
 
 ### Fixed
