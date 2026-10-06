@@ -98,6 +98,16 @@ public sealed class ChunkOptions
     public bool PreserveTables { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets how many short lines directly above a table (a title, a <c>(단위: …)</c> / unit line) are repeated at the
+    /// top of each of the table's chunks, above the header row, so a table chunk can be found by the words that name the
+    /// table. A line counts when it is at most 80 characters and does not end like a sentence (. ! ?); blank lines between them and the table are skipped. With no
+    /// such line the nearest heading above the table is used. The lines stay in the preceding text chunk as well, and the
+    /// repeated text is recorded as <c>table_context</c> in the chunk metadata. Applies with <see cref="PreserveTables"/>.
+    /// Default: 2; 0 turns it off.
+    /// </summary>
+    public int TableContextLines { get; set; } = 2;
+
+    /// <summary>
     /// Gets or sets the similarity threshold for semantic chunking.
     /// Lower values create more chunks at semantic boundaries.
     /// Range: 0.0 to 1.0. Default: 0.5.

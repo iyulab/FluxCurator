@@ -20,7 +20,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 - **Smart Chunking** - Rule-based chunking (sentence, paragraph, token)
 - **Semantic Chunking** - Embedding-based chunking for semantic boundaries
 - **Hierarchical Chunking** - Document structure-aware chunking with parent-child relationships
-- **Table-Aware Chunking** - Markdown tables stay whole (or split between rows with the header repeated) in every built-in strategy; `ChunkOptions.PreserveTables` (default on), `TableAwareChunker` for your own `IChunker`
+- **Table-Aware Chunking** - Markdown tables stay whole (or split between rows with the header repeated) in every built-in strategy; `ChunkOptions.PreserveTables` (default on), `TableAwareChunker` for your own `IChunker`; each table chunk also repeats the title/unit line(s) above the table or the nearest heading (`ChunkOptions.TableContextLines`, default 2, metadata `table_context`)
 - **Multi-Language Support** - 13 languages including Korean, English, Japanese, Chinese, Vietnamese, Thai
 - **National ID Validation** - Checksum validation for 13 countries including SSN (US), RRN (Korea), Aadhaar (India), SIN (Canada)
 - **Streaming Support** - Memory-efficient streaming chunk generation via `ChunkStreamAsync`

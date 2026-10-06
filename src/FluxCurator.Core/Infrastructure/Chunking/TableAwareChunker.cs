@@ -13,7 +13,8 @@ using FluxCurator.Core.Infrastructure.Languages;
 /// <remarks>
 /// Table chunks carry <c>Metadata.Custom</c> entries <c>table</c> (true), <c>table_index</c> (0-based position of the
 /// table among the tables of the input text), <c>table_piece</c> / <c>table_pieces</c>
-/// (1-based piece and count) and <c>table_row_start</c> / <c>table_row_end</c> (0-based body rows, header excluded).
+/// (1-based piece and count) and <c>table_row_start</c> / <c>table_row_end</c> (0-based body rows, header excluded), and
+/// <c>table_context</c> when the line(s) naming the table are repeated above the header (<see cref="ChunkOptions.TableContextLines"/>).
 /// Turn it off with <see cref="ChunkOptions.PreserveTables"/> = false.
 /// </remarks>
 public sealed class TableAwareChunker : IChunker
@@ -90,6 +91,8 @@ public sealed class TableAwareChunker : IChunker
 
     private IEnumerable<DocumentChunk> TableChunks(string text, Segment table, int tableIndex, ChunkOptions options, ILanguageProfile profile)
     {
+        var context = TableContext(text, table.Start, options.TableContextLines);
+        var prefix = context is null ? string.Empty : context + "\n";
         var rows = table.Lines;
         var headerCount = rows.Count > 1 && IsDelimiter(text[rows[1].Start..rows[1].End]) ? 2 : 0;
         var header = string.Join("\n", rows.Take(headerCount).Select(r => text[r.Start..r.End]));
@@ -98,7 +101,7 @@ public sealed class TableAwareChunker : IChunker
 
         if (body.Count == 0 || profile.EstimateTokenCount(whole) <= options.MaxChunkSize)
         {
-            yield return TableChunk(whole, table.Start, table.End, tableIndex, piece: 1, pieces: 1, rowStart: 0, rowEnd: body.Count - 1, profile);
+            yield return TableChunk(prefix + whole, table.Start, table.End, tableIndex, piece: 1, pieces: 1, rowStart: 0, rowEnd: body.Count - 1, context, profile);
             yield break;
         }
 
@@ -106,7 +109,8 @@ public sealed class TableAwareChunker : IChunker
         // rather than being cut inside a cell.
         var pieces = new List<(int From, int To)>();
         var from = 0;
-        var headerTokens = header.Length == 0 ? 0 : profile.EstimateTokenCount(header);
+        var headerTokens = (header.Length == 0 ? 0 : profile.EstimateTokenCount(header)) +
+                           (context is null ? 0 : profile.EstimateTokenCount(context));
         var tokens = headerTokens;
         for (var i = 0; i < body.Count; i++)
         {
@@ -127,14 +131,27 @@ public sealed class TableAwareChunker : IChunker
         {
             var (first, last) = pieces[p];
             var rowsText = text[body[first].Start..body[last].End];
-            var content = header.Length == 0 ? rowsText : header + "\n" + rowsText;
+            var content = prefix + (header.Length == 0 ? rowsText : header + "\n" + rowsText);
             var start = p == 0 ? table.Start : body[first].Start;
-            yield return TableChunk(content, start, body[last].End, tableIndex, p + 1, pieces.Count, first, last, profile);
+            yield return TableChunk(content, start, body[last].End, tableIndex, p + 1, pieces.Count, first, last, context, profile);
         }
     }
 
-    private DocumentChunk TableChunk(string content, int start, int end, int tableIndex, int piece, int pieces, int rowStart, int rowEnd, ILanguageProfile profile) =>
-        new()
+    private DocumentChunk TableChunk(string content, int start, int end, int tableIndex, int piece, int pieces, int rowStart, int rowEnd, string? context, ILanguageProfile profile)
+    {
+        var custom = new Dictionary<string, object>
+        {
+            ["table"] = true,
+            ["table_index"] = tableIndex,
+            ["table_piece"] = piece,
+            ["table_pieces"] = pieces,
+            ["table_row_start"] = rowStart,
+            ["table_row_end"] = rowEnd,
+        };
+        if (context is not null)
+            custom["table_context"] = context;
+
+        return new()
         {
             Content = content,
             Location = new ChunkLocation { StartPosition = start, EndPosition = end },
@@ -145,17 +162,51 @@ public sealed class TableAwareChunker : IChunker
                 Strategy = StrategyOf(_inner),
                 StartsAtSentenceBoundary = true,
                 EndsAtSentenceBoundary = true,
-                Custom = new Dictionary<string, object>
-                {
-                    ["table"] = true,
-                    ["table_index"] = tableIndex,
-                    ["table_piece"] = piece,
-                    ["table_pieces"] = pieces,
-                    ["table_row_start"] = rowStart,
-                    ["table_row_end"] = rowEnd,
-                },
+                Custom = custom,
             },
         };
+    }
+
+    /// <summary>The longest line, in characters, that counts as a line naming the table (a title or a unit line).</summary>
+    private const int MaxContextLineLength = 80;
+
+    /// <summary>
+    /// The line(s) that name the table starting at <paramref name="tableStart"/>: up to <paramref name="maxLines"/> short
+    /// lines directly above it (blank lines skipped, stopping at the first longer line or table row), else the nearest
+    /// heading above it. Null when there is none or <paramref name="maxLines"/> is 0.
+    /// </summary>
+    internal static string? TableContext(string text, int tableStart, int maxLines)
+    {
+        if (maxLines <= 0 || tableStart <= 0)
+            return null;
+
+        var above = text[..tableStart].Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n');
+        var picked = new List<string>();
+        for (var i = above.Length - 1; i >= 0 && picked.Count < maxLines; i--)
+        {
+            var line = above[i].Trim();
+            if (line.Length == 0)
+                continue;
+            // A title or unit line is short and is not a sentence; a line ending like one is the prose above the table.
+            if (line.Length > MaxContextLineLength || line.Count(c => c == '|') >= 2 || EndsLikeASentence(line))
+                break;
+            picked.Insert(0, line);
+        }
+
+        if (picked.Count > 0)
+            return string.Join("\n", picked);
+
+        for (var i = above.Length - 1; i >= 0; i--)
+        {
+            var line = above[i].Trim();
+            if (line.StartsWith('#') && line.TrimStart('#').StartsWith(' ') && line.Length <= MaxContextLineLength * 2)
+                return line;
+        }
+
+        return null;
+    }
+
+    private static bool EndsLikeASentence(string line) => line[^1] is '.' or '!' or '?' or '。' or '！' or '？';
 
     private static ChunkingStrategy StrategyOf(IChunker chunker) =>
         Enum.TryParse<ChunkingStrategy>(chunker.StrategyName, ignoreCase: true, out var strategy) ? strategy : default;

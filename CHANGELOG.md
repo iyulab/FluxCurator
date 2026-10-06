@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [0.12.0] - Unreleased
+
+### Added
+- **A table chunk carries the line(s) that name the table.** The short lines directly above a table (a title, a
+  `(단위: …)` / unit line — at most 80 characters, not ending like a sentence), or else the nearest heading, are
+  repeated at the top of each of the table's chunks above the header row, so a numbers-only table piece is found by the
+  words that name the table. The lines stay in the preceding text chunk as well; the repeated text is in the chunk's
+  `table_context` metadata. `ChunkOptions.TableContextLines` (default 2; 0 turns it off). Table chunk text changes for
+  documents with such lines — re-chunk to pick it up.
+
 ## [0.11.0] - 2026-10-06
 
 ### Changed
