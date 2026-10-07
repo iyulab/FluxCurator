@@ -142,11 +142,27 @@ public class GermanyIdDetectorTests
     [Fact]
     public void Detect_PersonalausweisPattern_Detected()
     {
-        var text = "Ausweis: A123456780";
-        var matches = _detector.Detect(text);
+        // The specimen card's number: T22000129, check digit 3.
+        var match = Assert.Single(_detector.Detect("Ausweis: T220001293"));
 
-        Assert.NotEmpty(matches);
+        Assert.Equal("T220001293", match.Value);
+        Assert.True(match.Confidence >= 0.95f, $"valid check digit confidence {match.Confidence}");
     }
+
+    [Fact]
+    public void Detect_Personalausweis_WrongCheckDigit_StillAboveDefaultThreshold()
+    {
+        var match = Assert.Single(_detector.Detect("Ausweis: T220001294"));
+
+        Assert.InRange(match.Confidence, 0.8f, 0.9f);
+    }
+
+    [Theory]
+    [InlineData("host Pitsdshdb1 started")]   // lower case: a hostname, not a printed ID
+    [InlineData("node WEBSRV0001 joined")]    // vowels and S are not in the ID card alphabet
+    [InlineData("Ausweis: A123456780")]       // A is not a valid first character
+    public void Detect_HostnamesAndOtherAlnumIds_NotReported(string text) =>
+        Assert.Empty(_detector.Detect(text));
 
     #endregion
 

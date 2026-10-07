@@ -75,6 +75,32 @@ public sealed class PIIMaskingOptions
     public float MinConfidence { get; set; } = 0.8f;
 
     /// <summary>
+    /// Keys whose values are machine identifiers, never PII: a value written as <c>key=value</c>, <c>key: value</c> or
+    /// <c>"key": value</c> under one of these keys is not reported, whatever its shape (<c>pid=0101234567</c>,
+    /// <c>"port": 5432</c>). Compared case-insensitively. The default covers audit, process, network and journald
+    /// cursor fields (<see cref="DefaultNonPiiKeys"/>); add your own, or clear it to judge every value by shape alone.
+    /// </summary>
+    /// <remarks>
+    /// Independently of this set, a value that is one segment of a compound identifier - a token of two or more
+    /// <c>;</c>-separated <c>k=v</c> segments, at least one of them a hex id of 8 or more characters, such as a journald
+    /// cursor <c>s=4bf9…;i=43b37;m=0161431588;t=65c9…</c> - is not reported either.
+    /// </remarks>
+    public ISet<string> NonPiiKeys { get; set; } = new HashSet<string>(DefaultNonPiiKeys, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The keys <see cref="NonPiiKeys"/> starts with: Linux audit ids (<c>uid</c>, <c>auid</c>, <c>ses</c>, …), process and
+    /// thread ids, ports, sizes, sequence numbers, timestamps and offsets, and the journald cursor fields.
+    /// </summary>
+    public static IReadOnlyList<string> DefaultNonPiiKeys { get; } =
+    [
+        "uid", "auid", "euid", "suid", "fsuid", "ouid", "gid", "egid", "sgid", "fsgid", "ogid", "ses", "session_id",
+        "pid", "ppid", "tid", "port", "sport", "dport", "src_port", "dst_port", "srcport", "dstport", "lport", "rport",
+        "bytes", "len", "length", "size", "seq", "seqno", "ack", "ts", "timestamp", "time", "epoch", "offset", "inode",
+        "ino", "dev", "exit", "errno", "code", "status", "count",
+        "__cursor", "__realtime_timestamp", "__monotonic_timestamp", "_pid", "_uid", "_gid", "_boot_id", "_machine_id",
+    ];
+
+    /// <summary>
     /// Gets or sets custom token formats for each PII type.
     /// </summary>
     public Dictionary<PIIType, string> CustomTokens { get; set; } = new();

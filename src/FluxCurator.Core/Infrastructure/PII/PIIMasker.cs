@@ -81,7 +81,13 @@ public sealed class PIIMasker : IPIIMasker
 
         var allMatches = new List<PIIMatch>();
         foreach (var detector in ActiveDetectors())
-            allMatches.AddRange(detector.Detect(text));
+        {
+            foreach (var match in detector.Detect(text))
+            {
+                if (!IsMachineIdentifierValue(text, match))
+                    allMatches.Add(match);
+            }
+        }
 
         // Resolve overlaps FIRST (prefer longer/more specific matches),
         // then filter by confidence. This prevents shorter partial matches
@@ -174,6 +180,75 @@ public sealed class PIIMasker : IPIIMasker
             }
         }
     }
+
+    /// <summary>
+    /// Whether a match is the value of a machine identifier rather than PII: the value of a key in
+    /// <see cref="PIIMaskingOptions.NonPiiKeys"/>, or one segment of a compound identifier token
+    /// (<c>k=v;k=v</c> with a hex id segment). The digits of <c>pid=0161431588</c> are phone-shaped; the key says what they are.
+    /// </summary>
+    private bool IsMachineIdentifierValue(string text, PIIMatch match)
+    {
+        var key = KeyBefore(text, match.StartIndex);
+        if (key is not null && Options.NonPiiKeys.Contains(key))
+            return true;
+
+        return key is not null && IsCompoundIdentifierSegment(text, match);
+    }
+
+    /// <summary>The key a value at <paramref name="index"/> is assigned to: <c>key=</c>, <c>key:</c> or <c>"key":</c>, or null.</summary>
+    private static string? KeyBefore(string text, int index)
+    {
+        var i = index - 1;
+        while (i >= 0 && text[i] is '"' or '\'' or ' ' or '\t')
+            i--;
+        if (i < 0 || text[i] is not ('=' or ':'))
+            return null;
+
+        i--;
+        while (i >= 0 && text[i] is ' ' or '\t' or '"' or '\'')
+            i--;
+
+        var end = i + 1;
+        while (i >= 0 && (char.IsAsciiLetterOrDigit(text[i]) || text[i] is '_' or '-' or '.'))
+            i--;
+
+        return end > i + 1 ? text[(i + 1)..end] : null;
+    }
+
+    /// <summary>
+    /// Whether the match is one <c>k=v</c> segment of a token of two or more <c>;</c>-separated segments, another of which
+    /// carries a hex id of 8 or more characters - a journald cursor, a session descriptor.
+    /// </summary>
+    private static bool IsCompoundIdentifierSegment(string text, PIIMatch match)
+    {
+        var start = match.StartIndex;
+        while (start > 0 && !IsTokenBoundary(text[start - 1]))
+            start--;
+        var end = match.EndIndex;
+        while (end < text.Length && !IsTokenBoundary(text[end]))
+            end++;
+
+        var segments = text[start..end].Split(';');
+        if (segments.Length < 2)
+            return false;
+
+        var own = text.AsSpan(start, match.StartIndex - start).Count(';');
+        for (var s = 0; s < segments.Length; s++)
+        {
+            if (s == own)
+                continue;
+            var eq = segments[s].IndexOf('=');
+            if (eq > 0 && segments[s].Length - eq - 1 >= 8 && segments[s].AsSpan(eq + 1).ContainsAnyExcept(HexDigits) is false)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static readonly System.Buffers.SearchValues<char> HexDigits =
+        System.Buffers.SearchValues.Create("0123456789abcdefABCDEF");
+
+    private static bool IsTokenBoundary(char c) => char.IsWhiteSpace(c) || c is '"' or '\'' or ',' or '{' or '}' or '[' or ']';
 
     /// <summary>
     /// Resolves overlapping matches by keeping the highest confidence match.

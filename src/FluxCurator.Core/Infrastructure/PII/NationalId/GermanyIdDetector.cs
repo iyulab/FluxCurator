@@ -27,11 +27,17 @@ public sealed class GermanyIdDetector : NationalIdDetectorBase
     /// <inheritdoc/>
     protected override string Pattern =>
         NumberStart + @"(?:" +
-            // Personalausweis: 1 letter + 8 alphanumeric + 1 check digit
-            @"[A-Z][A-Z0-9]{8}\d|" +
+            // Personalausweis (since 2010): a letter and 8 characters from the ID card alphabet (digits and the
+            // consonants C F G H J K L M N P R T V W X Y Z - no vowels, so words and hostnames do not fit), then the
+            // check digit. Upper case only, as printed.
+            @"[CFGHJKLMNPRTVWXYZ][CFGHJKLMNPRTVWXYZ0-9]{8}\d|" +
             // Steuer-ID: 11 digits
             @"\d{11}" +
         @")" + NumberEnd;
+
+    /// <inheritdoc/>
+    protected override System.Text.RegularExpressions.RegexOptions RegexOptions =>
+        System.Text.RegularExpressions.RegexOptions.Compiled;
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)
@@ -157,8 +163,19 @@ public sealed class GermanyIdDetector : NationalIdDetectorBase
             return false;
         }
 
-        // Basic format is valid
-        confidence = 0.88f;
+        // Check digit: weights 7, 3, 1 over the first nine characters (letters count A = 10 ... Z = 35), mod 10.
+        // A wrong check digit is still reported above the default MinConfidence, like the other ID detectors - a
+        // mistyped number is still someone's number.
+        var sum = 0;
+        int[] weights = [7, 3, 1];
+        for (var i = 0; i < 9; i++)
+        {
+            var c = id[i];
+            var v = char.IsAsciiDigit(c) ? c - '0' : c - 'A' + 10;
+            sum += v * weights[i % 3];
+        }
+
+        confidence = sum % 10 == id[9] - '0' ? 0.95f : 0.85f;
         return true;
     }
 }

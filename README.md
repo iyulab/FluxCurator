@@ -320,8 +320,15 @@ assert on it when a masking policy requires a type.
 Every built-in detector matches whole values only: a run of digits or ASCII letters is never reported in part, so
 timestamps, order numbers, hashes and UUIDs are not masked as phone numbers or IDs. A value written directly
 next to text in a script without spaces (`연락처010-1234-5678로`) is still detected. A bare run of ten digits
-is not treated as a US phone number, nor a bare `15xxxxxx` as a service number; write them with separators. Detection reads the value alone, without context: a run that happens to have a valid date and checksum (a timestamp,
-an order number) can still be reported as an ID or a card number; raise `MinConfidence` or filter such fields before masking. A custom detector deriving from
+is not treated as a US phone number, nor a bare `15xxxxxx` as a service number; write them with separators.
+
+A value the text marks as a machine identifier is not reported, whatever its shape: the value of a key in
+`PIIMaskingOptions.NonPiiKeys` (`uid=`, `auid=`, `pid=`, `port=`, `"ts": …`, journald fields - see `DefaultNonPiiKeys`;
+add your own keys or clear the set), and a segment of a compound identifier such as a journald cursor
+(`s=4bf9…;i=43b37;m=0161431588;t=65c9…`). The same number under another key (`phone=`, `"user":`) is still masked.
+Other values are read by shape: a run that happens to have a valid date and checksum (a timestamp, an order number)
+can still be reported as an ID or a card number; raise `MinConfidence`, add its key to `NonPiiKeys`, or filter such
+fields before masking. A custom detector deriving from
 `PIIDetectorBase` gets the same behaviour by placing `TokenStart`/`TokenEnd` (or, for numeric IDs,
 `NumberStart`/`NumberEnd`) around its `Pattern`.
 

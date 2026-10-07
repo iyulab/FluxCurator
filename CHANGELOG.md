@@ -18,12 +18,23 @@ breaking changes, and each one is marked **Breaking** with a migration note.
   also names categories only a registered detector reports (`PersonName`, `Address`, `DriversLicense`, `TaxId`,
   `SocialSecurityNumber`); their documentation now says so.
 
+- **Values of machine-identifier keys are not masked.** `PIIMaskingOptions.NonPiiKeys` (default
+  `DefaultNonPiiKeys`: audit ids `uid`/`auid`/`ses`, `pid`/`tid`, ports, sizes, sequence numbers, timestamps, journald
+  fields, ...) names keys whose `key=value`, `key: value` or `"key": value` is never PII, whatever its shape; a segment of a
+  compound identifier such as a journald cursor (`...;m=0161431588;t=...`, two or more `;`-separated `k=v` with a hex id)
+  is not reported either. Before, `uid=0161431588` and the cursor's `m=` field were masked as phone numbers, breaking
+  the identifier. The same number under another key is still masked; add keys or clear the set to change it.
+
 ### Changed
 - **Breaking**: `PIIType.URL` is `PIIType.UrlCredential` (same flag value), token `[CREDENTIAL]` instead of `[URL]` - the
   type masks a URL's secret, not the URL. Migration: rename references; a custom token keyed on `URL` keys on
   `UrlCredential`.
 
 ### Fixed
+- **A ten-character hostname is no longer masked as a German ID card number.** The Personalausweis pattern matched any
+  letter followed by nine letters or digits, case-insensitively, and never computed the check digit it described
+  (`Pitsdshdb1` -> `[NATIONAL_ID]`). It now takes upper case and the card's alphabet only (digits and consonants without
+  vowels) and checks the 7-3-1 check digit (valid 0.95, wrong check digit 0.85).
 - **The password@host of a URL is no longer read as an email address**, so `postgres://app:secret@db.internal` masks the
   password instead of leaving it behind a low-confidence email match.
 
