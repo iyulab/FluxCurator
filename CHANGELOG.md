@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
-## [0.13.0] - Unreleased
+## [0.13.0] - 2026-10-07
 
 ### Changed
 - **A table's caption names its chunks even when notes sit between them.** A caption-shaped line within 8 non-blank
