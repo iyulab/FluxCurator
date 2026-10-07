@@ -21,7 +21,7 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 - **Values of machine-identifier keys are not masked.** `PIIMaskingOptions.NonPiiKeys` (default
   `DefaultNonPiiKeys`: audit ids `uid`/`auid`/`ses`, `pid`/`tid`, ports, sizes, sequence numbers, timestamps, journald
   fields, ...) names keys whose `key=value`, `key: value` or `"key": value` is never PII, whatever its shape; a segment of a
-  compound identifier such as a journald cursor (`...;m=0161431588;t=...`, two or more `;`-separated `k=v` with a hex id)
+  compound identifier such as a journald cursor (`...;m=0161431588;t=...`, `;`-separated `k=v` segments, two or more of the others hex ids of 8+ characters)
   is not reported either. Before, `uid=0161431588` and the cursor's `m=` field were masked as phone numbers, breaking
   the identifier. The same number under another key is still masked; add keys or clear the set to change it.
 

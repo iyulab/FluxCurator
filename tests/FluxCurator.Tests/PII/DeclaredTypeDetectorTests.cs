@@ -54,6 +54,15 @@ public class DeclaredTypeDetectorTests
             m.Type is PIIType.BankAccount or PIIType.Passport or PIIType.UrlCredential or PIIType.HardwareAddress);
     }
 
+    // A phone number after an account word is reported by both detectors over the same span; the more confident one
+    // (the phone) wins every time, not by sort order.
+    [Fact]
+    public void SameSpanFromTwoDetectors_ResolvesToTheMoreConfident_Deterministically()
+    {
+        for (var i = 0; i < 20; i++)
+            Assert.Equal("bank contact [PHONE] today", AllTypes().Mask("bank contact 010-1234-5678 today").MaskedText);
+    }
+
     [Fact]
     public void CoveredTypes_NamesWhatTheMaskerCanFind_NotEveryDeclaredCategory()
     {

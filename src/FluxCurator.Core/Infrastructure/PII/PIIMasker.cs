@@ -216,8 +216,9 @@ public sealed class PIIMasker : IPIIMasker
     }
 
     /// <summary>
-    /// Whether the match is one <c>k=v</c> segment of a token of two or more <c>;</c>-separated segments, another of which
-    /// carries a hex id of 8 or more characters - a journald cursor, a session descriptor.
+    /// Whether the match is one <c>k=v</c> segment of a token of <c>;</c>-separated segments, at least two others of which
+    /// carry a hex id of 8 or more characters - a journald cursor, a session descriptor. One hex segment is not enough:
+    /// <c>user=kim;phone=010-1234-5678;sid=9d1e…</c> is a record that happens to carry a session id, and its phone is PII.
     /// </summary>
     private static bool IsCompoundIdentifierSegment(string text, PIIMatch match)
     {
@@ -229,20 +230,21 @@ public sealed class PIIMasker : IPIIMasker
             end++;
 
         var segments = text[start..end].Split(';');
-        if (segments.Length < 2)
+        if (segments.Length < 3)
             return false;
 
         var own = text.AsSpan(start, match.StartIndex - start).Count(';');
+        var hexSegments = 0;
         for (var s = 0; s < segments.Length; s++)
         {
             if (s == own)
                 continue;
             var eq = segments[s].IndexOf('=');
             if (eq > 0 && segments[s].Length - eq - 1 >= 8 && segments[s].AsSpan(eq + 1).ContainsAnyExcept(HexDigits) is false)
-                return true;
+                hexSegments++;
         }
 
-        return false;
+        return hexSegments >= 2;
     }
 
     private static readonly System.Buffers.SearchValues<char> HexDigits =
@@ -258,13 +260,18 @@ public sealed class PIIMasker : IPIIMasker
         if (matches.Count <= 1)
             return matches;
 
-        // Sort by start position, then by length (prefer longer matches)
+        // Sort by start position, then by length (prefer longer matches), then by confidence, then by type - so two
+        // detectors reporting the same span (a phone number after the word "bank") always resolve the same way.
         matches.Sort((a, b) =>
         {
             var posCompare = a.StartIndex.CompareTo(b.StartIndex);
             if (posCompare != 0)
                 return posCompare;
-            return b.Length.CompareTo(a.Length); // Longer first
+            var lengthCompare = b.Length.CompareTo(a.Length); // Longer first
+            if (lengthCompare != 0)
+                return lengthCompare;
+            var confidenceCompare = b.Confidence.CompareTo(a.Confidence); // More confident first
+            return confidenceCompare != 0 ? confidenceCompare : a.Type.CompareTo(b.Type);
         });
 
         var result = new List<PIIMatch>();

@@ -45,6 +45,7 @@ public class MachineIdentifierSuppressionTests
     [InlineData("hash=9d1e4c2a7f3b48e6a5c0d2f1e8b7a6c5 phone=010-1234-5678", "[PHONE]")]
     [InlineData("hash 9d1e4c2a7f3b48e6a5c0d2f1e8b7a6c5 주민번호: 901231-1234567", "[NATIONAL_ID]")]
     [InlineData("caller_id=010-1234-5678 uid=1000", "[PHONE]")]
+    [InlineData("user=kim;phone=010-1234-5678;sid=9d1e4c2a7f3b48e6", "[PHONE]")]   // one hex segment: a record, not a cursor
     public void PersonValues_NextToIdentifiers_AreStillMasked(string line, string token)
     {
         var result = AllTypes().Mask(line);

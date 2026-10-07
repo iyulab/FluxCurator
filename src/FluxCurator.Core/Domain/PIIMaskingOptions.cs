@@ -81,8 +81,8 @@ public sealed class PIIMaskingOptions
     /// cursor fields (<see cref="DefaultNonPiiKeys"/>); add your own, or clear it to judge every value by shape alone.
     /// </summary>
     /// <remarks>
-    /// Independently of this set, a value that is one segment of a compound identifier - a token of two or more
-    /// <c>;</c>-separated <c>k=v</c> segments, at least one of them a hex id of 8 or more characters, such as a journald
+    /// Independently of this set, a value that is one segment of a compound identifier - a token of
+    /// <c>;</c>-separated <c>k=v</c> segments, at least two of the others hex ids of 8 or more characters, such as a journald
     /// cursor <c>s=4bf9…;i=43b37;m=0161431588;t=65c9…</c> - is not reported either.
     /// </remarks>
     public ISet<string> NonPiiKeys { get; set; } = new HashSet<string>(DefaultNonPiiKeys, StringComparer.OrdinalIgnoreCase);
