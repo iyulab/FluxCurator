@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [0.13.0] - Unreleased
+
+### Changed
+- **A table's caption names its chunks even when notes sit between them.** A caption-shaped line within 8 non-blank
+  lines above a table (`<표 N> …`, `[표 N] …`, `표 N. …` / `표 N-1 …`, `Table N: …`, `Tab. N …`; figure captions are not
+  used) takes the first `table_context` slot; the short lines directly above the table fill the rest. Footnote and note
+  lines (`3. … 한다.`, `4) …`, `*`, `※`, `주)`, `Note:`, `자료출처:`, `출처:`, `Source:`) are skipped instead of ending the
+  look-back. The search stops at a table row, so a caption of the table above is not taken. Without a caption the
+  behaviour is unchanged. `table_context` and table chunk text change for such documents — re-chunk to pick it up.
+
 ## [0.12.0] - 2026-10-06
 
 ### Added

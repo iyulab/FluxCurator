@@ -100,8 +100,11 @@ public sealed class ChunkOptions
     /// <summary>
     /// Gets or sets how many short lines directly above a table (a title, a <c>(단위: …)</c> / unit line) are repeated at the
     /// top of each of the table's chunks, above the header row, so a table chunk can be found by the words that name the
-    /// table. A line counts when it is at most 80 characters and does not end like a sentence (. ! ?); blank lines between them and the table are skipped. With no
-    /// such line the nearest heading above the table is used. The lines stay in the preceding text chunk as well, and the
+    /// table. A line counts when it is at most 80 characters and does not end like a sentence (. ! ?); blank lines and
+    /// note lines (footnotes such as «3. …», «*», «※», «주)», source lines) between them and the table are skipped. A
+    /// table caption («&lt;표 5&gt; …», «[표 5] …», «표 5. …», «Table 5: …») within 8 lines above the table takes the first
+    /// slot even when other lines sit between it and the table. With no such line the nearest heading above the table is
+    /// used. The lines stay in the preceding text chunk as well, and the
     /// repeated text is recorded as <c>table_context</c> in the chunk metadata. Applies with <see cref="PreserveTables"/>.
     /// Default: 2; 0 turns it off.
     /// </summary>

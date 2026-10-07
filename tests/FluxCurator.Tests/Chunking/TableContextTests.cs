@@ -101,4 +101,77 @@ public class TableContextTests
 
         Assert.Equal(Unit, table.Metadata.Custom!["table_context"]);
     }
+
+    // A court decision's shareholder tables: the caption is followed by a units line the parser made a heading, header
+    // cells that fell out of the table, and footnotes — and the next table on the page has the same shape.
+    private const string ShareholderTable =
+        "| | 계 | 보통주 | 우선주 | |\n" +
+        "| --- | --- | --- | --- | --- |\n" +
+        "| 갑 | 100 | 80 | 20 | 50.0 |";
+
+    private static string ShareholderBlock(string caption) =>
+        "비고 비금융4)･상장\n" +
+        "- 자료출처: 기업집단포털시스템\n" +
+        caption + "\n" +
+        "## 2022. 5. 1. 기준, 단위: 주, %) 지분율 비고\n" +
+        "주주명 소유주식수\n" +
+        "3. 이하 회사명을 기재할 때 ‘주식회사’는 생략한다.\n" +
+        "4. C는 한국표준산업분류상 ‘정보서비스업(J63)’을 영위하고 있다.\n" +
+        ShareholderTable;
+
+    [Fact]
+    public async Task ACaptionAboveNotesAndStrayHeaderCells_NamesTheTable()
+    {
+        var text = Prose + "\n\n" + ShareholderBlock("<표 5> C의 주주현황") + "\n\n" + Prose + "\n\n" + ShareholderBlock("<표 6> D의 주주현황");
+
+        var tables = (await Chunk(text)).Where(c => c.Metadata.Custom?.ContainsKey("table") == true).ToList();
+
+        Assert.Equal(2, tables.Count);
+        // The caption comes first, then the short line directly above the table; the footnotes are skipped.
+        Assert.Equal("<표 5> C의 주주현황\n주주명 소유주식수", tables[0].Metadata.Custom!["table_context"]);
+        Assert.Equal("<표 6> D의 주주현황\n주주명 소유주식수", tables[1].Metadata.Custom!["table_context"]);
+        Assert.StartsWith("<표 5> C의 주주현황\n", tables[0].Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void WithOneLine_TheCaptionWinsOverTheLineDirectlyAbove()
+    {
+        var text = ShareholderBlock("[표 5] C의 주주현황");
+
+        Assert.Equal("[표 5] C의 주주현황", global::FluxCurator.Core.Infrastructure.Chunking.TableAwareChunker.TableContext(text, text.IndexOf("| |", StringComparison.Ordinal), maxLines: 1));
+    }
+
+    [Fact]
+    public void ACaptionBelongingToTheTableAbove_IsNotTaken()
+    {
+        var text = "<표 1> 앞 표\n" + Table + "\n" + Title + "\n" + Table;
+
+        Assert.Equal(Title, global::FluxCurator.Core.Infrastructure.Chunking.TableAwareChunker.TableContext(text, text.LastIndexOf("| 연도", StringComparison.Ordinal), maxLines: 2));
+    }
+
+    [Theory]
+    [InlineData("<표 5> C의 주주현황", true)]
+    [InlineData("[표 2] 연도별 생산량", true)]
+    [InlineData("표 3. 지역별 현황", true)]
+    [InlineData("표 3-1 세부 내역", true)]
+    [InlineData("Table 4: Results by region", true)]
+    [InlineData("Tab. 2 Summary", true)]
+    [InlineData("## <표 7> 재무 현황", true)]
+    [InlineData("<그림 2> 추이", false)]
+    [InlineData("Figure 3: Trend", false)]
+    [InlineData("표준 운영 절차", false)]
+    [InlineData("Tables are listed below", false)]
+    public void Caption_Shapes(string line, bool expected) => Assert.Equal(expected, global::FluxCurator.Core.Infrastructure.Chunking.TableAwareChunker.IsCaption(line));
+
+    [Theory]
+    [InlineData("3. 이하 회사명을 기재할 때 ‘주식회사’는 생략한다.", true)]
+    [InlineData("4) 비상장 회사", true)]
+    [InlineData("* 잠정치", true)]
+    [InlineData("※ 단위 환산 기준", true)]
+    [InlineData("주) 연말 기준", true)]
+    [InlineData("- 자료출처: 기업집단포털시스템", true)]
+    [InlineData("Source: national statistics", true)]
+    [InlineData("1. 기준금리", false)]
+    [InlineData("(단위: 만 캐럿)", false)]
+    public void Note_Shapes(string line, bool expected) => Assert.Equal(expected, global::FluxCurator.Core.Infrastructure.Chunking.TableAwareChunker.IsNote(line));
 }

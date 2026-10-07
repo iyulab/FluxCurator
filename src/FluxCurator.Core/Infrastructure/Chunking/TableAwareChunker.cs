@@ -2,6 +2,7 @@ namespace FluxCurator.Core.Infrastructure.Chunking;
 
 using FluxCurator.Core.Core;
 using FluxCurator.Core.Domain;
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Infrastructure.Languages;
 
 /// <summary>
@@ -17,7 +18,7 @@ using FluxCurator.Core.Infrastructure.Languages;
 /// <c>table_context</c> when the line(s) naming the table are repeated above the header (<see cref="ChunkOptions.TableContextLines"/>).
 /// Turn it off with <see cref="ChunkOptions.PreserveTables"/> = false.
 /// </remarks>
-public sealed class TableAwareChunker : IChunker
+public sealed partial class TableAwareChunker : IChunker
 {
     private readonly IChunker _inner;
 
@@ -170,10 +171,15 @@ public sealed class TableAwareChunker : IChunker
     /// <summary>The longest line, in characters, that counts as a line naming the table (a title or a unit line).</summary>
     private const int MaxContextLineLength = 80;
 
+    /// <summary>How far above a table, in non-blank lines, a caption is looked for.</summary>
+    private const int CaptionWindow = 8;
+
     /// <summary>
-    /// The line(s) that name the table starting at <paramref name="tableStart"/>: up to <paramref name="maxLines"/> short
-    /// lines directly above it (blank lines skipped, stopping at the first longer line or table row), else the nearest
-    /// heading above it. Null when there is none or <paramref name="maxLines"/> is 0.
+    /// The line(s) that name the table starting at <paramref name="tableStart"/>. A caption-shaped line
+    /// (<see cref="IsCaption"/>) within <see cref="CaptionWindow"/> non-blank lines above it comes first, since it is what
+    /// names the table even when notes or stray header cells sit between it; then the short lines directly above the table
+    /// fill the remaining slots (blank and note lines skipped, stopping at the first longer line or table row). With
+    /// neither, the nearest heading above it. Null when there is none or <paramref name="maxLines"/> is 0.
     /// </summary>
     internal static string? TableContext(string text, int tableStart, int maxLines)
     {
@@ -181,17 +187,24 @@ public sealed class TableAwareChunker : IChunker
             return null;
 
         var above = text[..tableStart].Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n');
+        var caption = FindCaption(above);
         var picked = new List<string>();
-        for (var i = above.Length - 1; i >= 0 && picked.Count < maxLines; i--)
+        var slots = caption is null ? maxLines : maxLines - 1;
+        for (var i = above.Length - 1; i >= 0 && picked.Count < slots; i--)
         {
             var line = above[i].Trim();
-            if (line.Length == 0)
+            if (line.Length == 0 || IsNote(line))
                 continue;
+            if (line == caption)
+                break;
             // A title or unit line is short and is not a sentence; a line ending like one is the prose above the table.
             if (line.Length > MaxContextLineLength || line.Count(c => c == '|') >= 2 || EndsLikeASentence(line))
                 break;
             picked.Insert(0, line);
         }
+
+        if (caption is not null)
+            picked.Insert(0, caption);
 
         if (picked.Count > 0)
             return string.Join("\n", picked);
@@ -205,6 +218,50 @@ public sealed class TableAwareChunker : IChunker
 
         return null;
     }
+
+    /// <summary>
+    /// The nearest caption-shaped line within <see cref="CaptionWindow"/> non-blank lines above a table, stopping at a
+    /// table row (that caption would belong to the table above).
+    /// </summary>
+    private static string? FindCaption(string[] above)
+    {
+        var seen = 0;
+        for (var i = above.Length - 1; i >= 0 && seen < CaptionWindow; i--)
+        {
+            var line = above[i].Trim();
+            if (line.Length == 0)
+                continue;
+            if (line.Count(c => c == '|') >= 2)
+                return null;
+            if (line.Length <= MaxContextLineLength * 2 && IsCaption(line))
+                return line;
+            seen++;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// A table caption: «&lt;표 5&gt; …», «[표 5] …», «표 5. …», «표 5-1 …», «Table 5: …», «Tab. 5 …» (a Markdown heading
+    /// marker in front is allowed). Figure captions do not name a table.
+    /// </summary>
+    internal static bool IsCaption(string line) => CaptionPattern().IsMatch(line);
+
+    /// <summary>
+    /// A note under a table or text block, not a line that names a table: footnotes («3. …» ending as a sentence, «4) …»),
+    /// markers («*», «※», «주)», «주:», «Note:») and source lines («자료출처:», «자료:», «출처:», «Source:»).
+    /// </summary>
+    internal static bool IsNote(string line) =>
+        NoteMarkerPattern().IsMatch(line) || (NumberedLinePattern().IsMatch(line) && EndsLikeASentence(line));
+
+    [GeneratedRegex(@"^(#+\s*)?(<\s*(표|table|tab\.?)\s*\d+[^>]*>|\[\s*(표|table|tab\.?)\s*\d+[^\]]*\]|(표|table|tab\.)\s*\d+([-.]\d+)*\s*([.:)]|\s|$))", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex CaptionPattern();
+
+    [GeneratedRegex(@"^(\*|※|주\s*[):]|注|note\s*:|notes\s*:|-?\s*자료\s*출처\s*:|-?\s*자료\s*:|-?\s*출처\s*:|-?\s*source\s*:|\d{1,2}\)\s)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex NoteMarkerPattern();
+
+    [GeneratedRegex(@"^\d{1,2}\.\s")]
+    private static partial Regex NumberedLinePattern();
 
     private static bool EndsLikeASentence(string line) => line[^1] is '.' or '!' or '?' or '。' or '！' or '？';
 

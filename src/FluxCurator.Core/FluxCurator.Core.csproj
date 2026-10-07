@@ -10,4 +10,8 @@
     <PackageReference Include="Flux.Abstractions" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FluxCurator.Tests" />
+  </ItemGroup>
+
 </Project>
