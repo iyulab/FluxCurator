@@ -31,18 +31,19 @@ public enum PIIType
     CreditCard = 1 << 2,
 
     /// <summary>
-    /// Bank account numbers.
+    /// Bank account numbers: an IBAN, or a 10-16 digit number that follows an account word (<c>account</c>, <c>계좌</c>, ...).
     /// </summary>
     BankAccount = 1 << 3,
 
     /// <summary>
-    /// Passport numbers.
+    /// Passport numbers that follow a passport word (<c>passport</c>, <c>여권</c>, ...).
     /// </summary>
     Passport = 1 << 4,
 
     /// <summary>
     /// Driver's license numbers.
     /// </summary>
+    /// <remarks>No built-in detector reports this type: it is a category for a detector you register with <c>PIIMasker.RegisterDetector</c>. <c>PIIMasker.CoveredTypes</c> says which types the masker can actually find.</remarks>
     DriversLicense = 1 << 5,
 
     /// <summary>
@@ -51,18 +52,21 @@ public enum PIIType
     IPAddress = 1 << 6,
 
     /// <summary>
-    /// URLs and web addresses.
+    /// Secrets carried in a URL: the value of a credential-named parameter (<c>token</c>, <c>api_key</c>, <c>sig</c>, ...)
+    /// and the password of <c>scheme://user:password@host</c>. Only the secret is masked; the URL stays readable.
     /// </summary>
-    URL = 1 << 7,
+    UrlCredential = 1 << 7,
 
     /// <summary>
     /// Person names.
     /// </summary>
+    /// <remarks>No built-in detector reports this type: it is a category for a detector you register with <c>PIIMasker.RegisterDetector</c>. <c>PIIMasker.CoveredTypes</c> says which types the masker can actually find.</remarks>
     PersonName = 1 << 8,
 
     /// <summary>
     /// Physical addresses.
     /// </summary>
+    /// <remarks>No built-in detector reports this type: it is a category for a detector you register with <c>PIIMasker.RegisterDetector</c>. <c>PIIMasker.CoveredTypes</c> says which types the masker can actually find.</remarks>
     Address = 1 << 9,
 
     // ========================================
@@ -80,13 +84,20 @@ public enum PIIType
     /// Tax identification number (language-specific).
     /// Examples: TIN (US), Steuer-ID (DE), BRN (KR), etc.
     /// </summary>
+    /// <remarks>No built-in detector reports this type: it is a category for a detector you register with <c>PIIMasker.RegisterDetector</c>. <c>PIIMasker.CoveredTypes</c> says which types the masker can actually find.</remarks>
     TaxId = 1 << 11,
 
     /// <summary>
     /// Social security/insurance number (language-specific).
     /// Examples: SSN (US), INSEE (FR), NINO (UK), etc.
     /// </summary>
+    /// <remarks>The built-in national ID detectors (US SSN, FR INSEE, UK NINO, ...) report <see cref="NationalId"/>; no built-in detector reports this type. <c>PIIMasker.CoveredTypes</c> says which types the masker can actually find.</remarks>
     SocialSecurityNumber = 1 << 12,
+
+    /// <summary>
+    /// Hardware (MAC) addresses of network devices: <c>00:1A:2B:3C:4D:5E</c>, <c>00-1A-...</c>, <c>001a.2b3c.4d5e</c>.
+    /// </summary>
+    HardwareAddress = 1 << 13,
 
     /// <summary>
     /// Custom/user-defined PII type.
@@ -98,11 +109,12 @@ public enum PIIType
     // ========================================
 
     /// <summary>
-    /// All built-in PII types.
+    /// Every built-in category, including those only a registered detector reports
+    /// (see <c>PIIMasker.CoveredTypes</c> for what the masker can actually find).
     /// </summary>
     All = Email | Phone | CreditCard | BankAccount | Passport |
-          DriversLicense | IPAddress | URL | PersonName | Address |
-          NationalId | TaxId | SocialSecurityNumber,
+          DriversLicense | IPAddress | UrlCredential | PersonName | Address |
+          NationalId | TaxId | SocialSecurityNumber | HardwareAddress,
 
     /// <summary>
     /// Common PII types for general use.

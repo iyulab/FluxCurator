@@ -23,6 +23,9 @@ public sealed class EmailDetector : PIIDetectorBase
     /// </remarks>
     protected override string Pattern =>
         @"(?<![\p{L}\p{M}\p{N}._%+-])" +
+        // Not the password@host of a URL's authority (scheme://user:password@host): that is a credential and a host,
+        // reported by the URL credential detector, not an address someone receives mail at.
+        @"(?<![A-Za-z][A-Za-z0-9+.\-]*://[^\s/?#@]*:)" +
         @"[\p{L}\p{M}\p{N}._%+-]+@[\p{L}\p{M}\p{N}.-]+\." +
         @"(?:[A-Za-z]{2,63}" + TokenEnd + @"|[\p{L}\p{M}-[A-Za-z]]{2,63})";
 

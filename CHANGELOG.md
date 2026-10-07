@@ -4,6 +4,29 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [0.14.0] - Unreleased
+
+### Added
+- **Bank account numbers, passport numbers, URL credentials and MAC addresses are masked.** Built-in detectors now
+  report `BankAccount` (an IBAN by its check digits; a 10-16 digit number such as `110-234-567890` after an account word
+  like `account` or `계좌` on the same line), `Passport` (`M12345678`, `M123A4567` or nine digits after a passport word)
+  and `UrlCredential` (the value of a credential-named URL parameter such as `token` or `api_key`, and the password of
+  `scheme://user:password@host` - only the secret is masked, the URL stays readable), and the new
+  `PIIType.HardwareAddress` (`00:1A:2B:3C:4D:5E`, `00-1A-…`, `001a.2b3c.4d5e`; token `[MAC]`). Before, `TypesToMask = All`
+  left all four in the text.
+- **`PIIMasker.CoveredTypes`: the types a masker can actually find** with its options and registered detectors. `All`
+  also names categories only a registered detector reports (`PersonName`, `Address`, `DriversLicense`, `TaxId`,
+  `SocialSecurityNumber`); their documentation now says so.
+
+### Changed
+- **Breaking**: `PIIType.URL` is `PIIType.UrlCredential` (same flag value), token `[CREDENTIAL]` instead of `[URL]` - the
+  type masks a URL's secret, not the URL. Migration: rename references; a custom token keyed on `URL` keys on
+  `UrlCredential`.
+
+### Fixed
+- **The password@host of a URL is no longer read as an email address**, so `postgres://app:secret@db.internal` masks the
+  password instead of leaving it behind a low-confidence email match.
+
 ## [0.13.0] - 2026-10-07
 
 ### Changed

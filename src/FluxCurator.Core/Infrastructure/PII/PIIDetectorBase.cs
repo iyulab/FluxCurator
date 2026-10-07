@@ -116,6 +116,31 @@ public abstract class PIIDetectorBase : IPIIDetector
     }
 
     /// <summary>
+    /// Whether one of <paramref name="words"/> appears on the same line within <paramref name="window"/> characters
+    /// before <paramref name="index"/>, compared case-insensitively. For values whose shape alone is too common to call
+    /// PII - a run of hyphenated digits is an account number only when the text says so.
+    /// </summary>
+    protected static bool HasContextBefore(string text, int index, IReadOnlyList<string> words, int window = 40)
+    {
+        if (index <= 0)
+            return false;
+
+        var start = Math.Max(0, index - window);
+        var lineStart = text.LastIndexOf('\n', index - 1);
+        if (lineStart >= start)
+            start = lineStart + 1;
+
+        var before = text.AsSpan(start, index - start);
+        foreach (var word in words)
+        {
+            if (before.Contains(word, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Normalizes a value by removing common separators.
     /// </summary>
     protected static string NormalizeValue(string value)

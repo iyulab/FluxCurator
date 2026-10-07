@@ -47,6 +47,15 @@ public sealed class PIIMasker : IPIIMasker
     /// <inheritdoc/>
     public PIIMaskingOptions Options { get; }
 
+    /// <summary>
+    /// The types this masker can actually find: the built-in detectors selected by
+    /// <see cref="PIIMaskingOptions.TypesToMask"/> and <see cref="PIIMaskingOptions.LanguageCodes"/>, plus every
+    /// registered detector. A category in <see cref="PIIType.All"/> that no detector reports (for example
+    /// <see cref="PIIType.PersonName"/>) is not in it - assert on this when a masking policy requires a type.
+    /// </summary>
+    public PIIType CoveredTypes =>
+        ActiveDetectors().Aggregate(PIIType.None, (covered, detector) => covered | detector.PIIType);
+
     /// <inheritdoc/>
     public void RegisterDetector(IPIIDetector detector)
     {
@@ -129,6 +138,10 @@ public sealed class PIIMasker : IPIIMasker
         AddBuiltInDetector(new PhoneDetector());
         AddBuiltInDetector(new CreditCardDetector());
         AddBuiltInDetector(new IPAddressDetector());
+        AddBuiltInDetector(new BankAccountDetector());
+        AddBuiltInDetector(new PassportDetector());
+        AddBuiltInDetector(new UrlCredentialDetector());
+        AddBuiltInDetector(new HardwareAddressDetector());
 
         // Register national ID detectors based on language codes
         RegisterNationalIdDetectors();

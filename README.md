@@ -15,7 +15,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 ## Features
 
 - **Text Refinement** - Clean noisy text by removing blank lines, duplicates, empty list markers, and custom patterns
-- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs, credit cards across 13 countries
+- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs (13 countries), credit cards, bank accounts, passports, URL credentials and MAC addresses
 - **Content Filtering** - Filter harmful content with customizable rules and blocklists
 - **Smart Chunking** - Rule-based chunking (sentence, paragraph, token)
 - **Semantic Chunking** - Embedding-based chunking for semantic boundaries
@@ -307,10 +307,15 @@ FluxCurator includes language profiles for accurate sentence detection and token
 | `Phone` | Korean mobile, landline (incl. `(02) 555-1234`) and service numbers; US `(234) 567-8900` / `234-567-8900`; `+` international | Prefix and length validation |
 | `CreditCard` | Credit card numbers | Luhn algorithm |
 | `IPAddress` | IPv4 and IPv6 addresses | Format validation |
+| `BankAccount` | An IBAN; a 10-16 digit account number (plain or `110-234-567890`) after an account word (`account`, `acct`, `계좌`, `이체`, …) on the same line | IBAN mod-97; context word for domestic numbers |
+| `Passport` | `M12345678`, the Korean 2021 form `M123A4567`, or nine digits, after a passport word (`passport`, `여권`, `旅券`, …) | Context word |
+| `UrlCredential` | The secret inside a URL: the value of `token`, `access_token`, `api_key`, `key`, `sig`, `password`, `secret`, `code`, … parameters and the password of `scheme://user:password@host`. Only the secret is masked: `…/users?token=[CREDENTIAL]&page=2` | Credential-named parameter |
+| `HardwareAddress` | MAC addresses `00:1A:2B:3C:4D:5E`, `00-1A-…`, `001a.2b3c.4d5e` | One separator throughout; all-zero and broadcast skipped |
 
-`PIIType.BankAccount` and `PIIType.URL` exist for custom detectors, but **no built-in detector reports them** —
-selecting them in `TypesToMask` (including `All`) masks nothing of those kinds until you register a detector for
-them.
+`DriversLicense`, `PersonName`, `Address`, `TaxId` and `SocialSecurityNumber` are categories for detectors you
+register: **no built-in detector reports them** (US SSN, UK NINO and the other national numbers report `NationalId`).
+`PIIMasker.CoveredTypes` returns the types a masker can actually find with its options and registered detectors —
+assert on it when a masking policy requires a type.
 
 Every built-in detector matches whole values only: a run of digits or ASCII letters is never reported in part, so
 timestamps, order numbers, hashes and UUIDs are not masked as phone numbers or IDs. A value written directly
