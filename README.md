@@ -1,6 +1,6 @@
 # FluxCurator
 
-Clean, protect, and chunk your text for RAG pipelines — no dependencies required.
+Clean, protect, and chunk your text for RAG pipelines — no tokenizer, model, or service required.
 
 [![NuGet](https://img.shields.io/nuget/v/FluxCurator.svg)](https://www.nuget.org/packages/FluxCurator)
 [![.NET](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
@@ -10,23 +10,35 @@ Clean, protect, and chunk your text for RAG pipelines — no dependencies requir
 
 FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generation) pipelines. It provides multilingual PII masking, content filtering, and intelligent text chunking with support for 13 languages and 13 countries' national IDs.
 
-**Zero Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone with no external dependencies. The main package (`FluxCurator`) adds DI support and semantic chunking capabilities via external `IEmbedder` injection.
+**Minimal Dependencies Philosophy**: Core functionality (`FluxCurator.Core`) works standalone; its only dependency is the shared contract package `Flux.Abstractions`. The main package (`FluxCurator`) adds the `Curator` entry point, DI support and semantic chunking via an external `IEmbedder` you inject.
+
+## Packages
+
+| Package | Purpose |
+|---------|---------|
+| `FluxCurator` | `Curator` entry point, `AddFluxCurator` DI registration, `BatchProcessor`, and semantic chunking over your `IEmbedder` |
+| `FluxCurator.Core` | Interfaces, options and the built-in implementations: rule-based/hierarchical/table-aware chunkers, PII detectors and `PIIMasker`, `RuleBasedFilter`, `TextRefiner`, language profiles |
 
 ## Features
 
-- **Text Refinement** - Clean noisy text by removing blank lines, duplicates, empty list markers, and custom patterns
-- **Multilingual PII Masking** - Auto-detect and mask emails, phones, national IDs (13 countries), credit cards, bank accounts, passports, URL credentials and MAC addresses
-- **Content Filtering** - Filter harmful content with customizable rules and blocklists
-- **Smart Chunking** - Rule-based chunking (sentence, paragraph, token)
-- **Semantic Chunking** - Embedding-based chunking for semantic boundaries
-- **Hierarchical Chunking** - Document structure-aware chunking with parent-child relationships
-- **Table-Aware Chunking** - Markdown tables stay whole (or split between rows with the header repeated) in every built-in strategy; `ChunkOptions.PreserveTables` (default on), `TableAwareChunker` for your own `IChunker`; each table chunk also repeats the line(s) that name it — a caption such as `<표 5> …` / `Table 5: …` within 8 lines above, then the title/unit line(s) directly above (footnotes skipped), else the nearest heading (`ChunkOptions.TableContextLines`, default 2, metadata `table_context`)
-- **Multi-Language Support** - 13 languages including Korean, English, Japanese, Chinese, Vietnamese, Thai
-- **National ID Validation** - Checksum validation for 13 countries including SSN (US), RRN (Korea), Aadhaar (India), SIN (Canada)
-- **Streaming Support** - Memory-efficient streaming chunk generation via `ChunkStreamAsync`
-- **Pipeline Processing** - Combine filtering, masking, and chunking in one call
-- **Dependency Injection** - Full DI support with `IServiceCollection` extensions
-- **FileFlux Integration** - Seamless integration with FileFlux document processing
+| Feature | Entry point | How to turn it on |
+|---------|-------------|-------------------|
+| Text refinement — remove blank/duplicate lines, empty list markers, custom patterns | `Curator.WithTextRefinement(...)`, `Curator.RefineText`, `TextRefiner` | Opt-in: call `WithTextRefinement` (presets on `TextRefineOptions`) |
+| Multilingual PII masking — emails, phones, national IDs (13 countries), credit cards, IP addresses, bank accounts, passports, URL credentials, MAC addresses | `Curator.WithPIIMasking(...)` then `MaskPII` / `DetectPII` / `ContainsPII`; `PIIMasker` | Opt-in: call `WithPIIMasking` (`MaskPII` throws until you do); DI: `FluxCuratorOptions.EnablePIIMasking`. The default `TypesToMask` is `PIIType.Common` (email, phone, national ID, credit card); IP, bank account, passport, URL credential and MAC address need `TypesToMask` set to include them (or `PIIMaskingOptions.Strict`, which uses `PIIType.All`) |
+| National ID checksum validation — SSN (US), RRN (Korea), Aadhaar (India), SIN (Canada), … | `NationalIdRegistry`, `NationalIdDetectorBase` | On whenever PII masking is on; all 13 detectors are registered by default |
+| Custom PII detectors | `Curator.RegisterPIIDetector`, `PIIMasker.RegisterDetector`, `PIIDetectorBase` | Opt-in: register your detector |
+| Content filtering — rule and blocklist based | `Curator.WithContentFiltering(...)` then `FilterContent`; `RuleBasedFilter`, `ContentFilterManager` | Opt-in: call `WithContentFiltering`. **No word lists are built in** — supply `ContentFilterOptions.CustomBlocklist` / `CustomPatterns` (or `RuleBasedFilter.AddRule`), otherwise nothing is filtered |
+| Rule-based chunking — `Auto`, `Sentence`, `Paragraph`, `Token` | `Curator.ChunkAsync`, `IChunkerFactory.CreateChunker` | Default: `ChunkOptions.Strategy = Auto` |
+| Hierarchical chunking — Markdown heading structure with parent/child metadata (`HierarchyLevel`, `ParentId`) | `ChunkingStrategy.Hierarchical` | Opt-in: set the strategy (or use `ChunkOptions.ForLargeDocument`) |
+| Semantic chunking — split at embedding-similarity boundaries | `ChunkingStrategy.Semantic`, `Curator.UseEmbedder` | Opt-in: requires an `IEmbedder` (`UseEmbedder`, or registered in DI before `AddFluxCurator`); without one, chunking with this strategy throws |
+| Table-aware chunking — Markdown tables stay whole (or split between rows with the header repeated) in every built-in strategy; each table chunk also repeats the line(s) that name it — a caption such as `<표 5> …` / `Table 5: …` within 8 lines above, then the title/unit line(s) directly above (footnotes skipped), else the nearest heading (metadata `table_context`) | `ChunkOptions.PreserveTables`, `ChunkOptions.TableContextLines`, `TableAwareChunker` for your own `IChunker` | Default on (`PreserveTables = true`, `TableContextLines = 2`) |
+| Chunk balancing — merge undersized and split oversized chunks | `ChunkOptions.EnableChunkBalancing` | Default on |
+| Multi-language support — 13 language profiles for sentence detection and token estimation | `ChunkOptions.LanguageCode`, `Curator.DetectLanguage` | Default: auto-detect (`LanguageCode = null`) |
+| Streaming chunks | `Curator.ChunkStreamAsync` | Call it instead of `ChunkAsync` |
+| Pipeline processing — Refine → Filter → Mask → Chunk in one call | `Curator.PreprocessAsync` → `PreprocessingResult` | Runs the steps you enabled with the `With…` calls |
+| Batch processing | `Curator.CreateBatchProcessor()` → `BatchProcessor` (`AddTexts`, `WithMaxConcurrency`, `ProcessAsync`, `PreprocessAsync`) | Opt-in |
+| Dependency injection | `services.AddFluxCurator(...)` registers `IChunkerFactory` (singleton) and `IFluxCurator` (transient, a configured `Curator`) | Call `AddFluxCurator`; inject `IFluxCurator` (namespace `FluxCurator.Core`) |
+| FileFlux integration | FileFlux delegates its chunking to FluxCurator through `IChunkerFactory` | The adapter lives in the FileFlux package — see [FileFlux Integration](docs/fileflux-integration.md) |
 
 ## Installation
 
@@ -34,7 +46,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 # Main package (DI support and semantic chunking)
 dotnet add package FluxCurator
 
-# Core package only (zero dependencies)
+# Core package only (no Curator/DI; depends only on Flux.Abstractions)
 dotnet add package FluxCurator.Core
 ```
 
@@ -86,7 +98,7 @@ await foreach (var chunk in curator.ChunkStreamAsync(largeText))
 // Program.cs
 services.AddFluxCurator(options =>
 {
-    options.DefaultChunkOptions = ChunkOptions.ForRAG;
+    options.DefaultChunkOptions = ChunkOptions.ForMediumContext;  // ForRAG is Semantic: it needs an IEmbedder (below)
     options.EnablePIIMasking = true;
     options.EnableContentFiltering = true;
 });
@@ -218,7 +230,7 @@ var curator = new Curator()
     .WithTextRefinement(TextRefineOptions.Standard)
     .WithContentFiltering()
     .WithPIIMasking(PIIMaskingOptions.ForLanguages("en", "ko", "ja"))
-    .WithChunkingOptions(ChunkOptions.ForRAG);
+    .WithChunkingOptions(ChunkOptions.ForMediumContext);  // ForRAG needs UseEmbedder(...) first
 
 // Process: Refine → Filter → Mask PII → Chunk
 var result = await curator.PreprocessAsync(text);
@@ -301,6 +313,10 @@ FluxCurator includes language profiles for accurate sentence detection and token
 
 ### Global PII Types
 
+`PIIMaskingOptions.TypesToMask` selects which built-in detectors run. Its default, `PIIType.Common`, covers `Email`,
+`Phone`, `CreditCard` and `NationalId`; the other types below are detected only when you include them (for example
+`TypesToMask = PIIType.All`, or the `PIIMaskingOptions.Strict` preset).
+
 | Type | Description | Validation |
 |------|-------------|------------|
 | `Email` | Email addresses, including non-ASCII local parts and domains (`홍길동@회사.kr`) | Local-part and TLD validation |
@@ -379,7 +395,7 @@ Choose the right preset based on your embedding model's context window:
 | Preset | Target | Max | Overlap | Strategy | Best For |
 |--------|--------|-----|---------|----------|----------|
 | `Default` | 512 | 1024 | 50 | Auto | General purpose |
-| `ForRAG` | 512 | 1024 | 64 | Semantic | RAG with semantic chunking |
+| `ForRAG` | 512 | 1024 | 64 | Semantic | RAG with semantic chunking (requires an `IEmbedder`) |
 | `ForShortContext` | 200 | 256 | 25 | Sentence | MiniLM, BGE-small (256 tokens) |
 | `ForMediumContext` | 400 | 512 | 50 | Sentence | e5, BGE-base, GTE (512 tokens) |
 | `ForLongContext` | 1024 | 2048 | 128 | Paragraph | OpenAI, Cohere (8K+ tokens) |
@@ -393,8 +409,8 @@ Choose the right preset based on your embedding model's context window:
 | Strategy | Example Output |
 |----------|----------------|
 | `Token` | `[EMAIL]`, `[PHONE]` |
-| `Asterisk` | `****@****.com` |
-| `Character` | each character replaced by the mask character |
+| `Asterisk` | every character replaced by `*` (`****************`) |
+| `Character` | every character replaced by `X` |
 | `Redact` | `[REDACTED]` |
 | `Partial` | `jo**@ex****.com` |
 | `Hash` | `[HASH:a1b2c3d4]` |
@@ -563,7 +579,7 @@ package. See [FileFlux Integration](docs/fileflux-integration.md).
 ```
 FluxCurator/
 ├── src/
-│   ├── FluxCurator.Core/   # Zero-dependency core: interfaces (Core/), models (Domain/), chunkers, PII, filters, languages
+│   ├── FluxCurator.Core/   # Core (depends only on Flux.Abstractions): interfaces (Core/), models (Domain/), chunkers, PII, filters, languages
 │   └── FluxCurator/        # Main package: Curator, DI registration, semantic chunking (requires IEmbedder)
 └── docs/                   # Guides
 ```
@@ -589,7 +605,7 @@ var curator = new Curator()
 
 **Q: My chunks are too small/too large. How do I fix this?**
 
-Enable chunk balancing and adjust size limits:
+Chunk balancing is on by default (`EnableChunkBalancing`); adjust the size limits:
 
 ```csharp
 var options = new ChunkOptions
@@ -627,7 +643,7 @@ var options = new ChunkOptions
 
 **Q: Does FluxCurator support document structure from FileFlux?**
 
-Yes. When documents are processed through FileFlux, structure hints (headings, sections) are passed to FluxCurator for intelligent boundary detection. Use `ChunkingStrategy.Hierarchical` for best results.
+Yes, through the text itself: FileFlux emits Markdown with headings, and `ChunkingStrategy.Hierarchical` chunks at those heading boundaries. There is no separate structure-hint API in FluxCurator.
 
 **Q: How do I process Korean documents (DOCX, PPTX, HWP)?**
 
