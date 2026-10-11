@@ -6,6 +6,10 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 
 ## [Unreleased]
 
+### Documentation
+- **`PIIMaskingOptions.MaskCharacter` says what it changes:** the character `Partial` masking uses. The XML doc had said
+  «for asterisk masking», but `Asterisk` always uses `*` and `Character` always uses `X`. Behaviour is unchanged.
+
 ### Changed
 - **The packages from this repository depend on each other at exactly the same version** (`[x.y.z]`), not a floor.
   A consumer that moves one of them while a family member it depends on resolves at an older version now gets restore warning NU1608 naming

@@ -106,8 +106,9 @@ public sealed class PIIMaskingOptions
     public Dictionary<PIIType, string> CustomTokens { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the character to use for asterisk masking.
-    /// Default: '*'.
+    /// Gets or sets the character <see cref="MaskingStrategy.Partial"/> uses for the part of a value it hides.
+    /// Default: '*'. <see cref="MaskingStrategy.Asterisk"/> always uses '*' and <see cref="MaskingStrategy.Character"/>
+    /// always uses 'X'; this setting does not change them.
     /// </summary>
     public char MaskCharacter { get; set; } = '*';
 
