@@ -6,6 +6,13 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 
 ## [Unreleased]
 
+### Added
+- **Semantic chunking runs on any `Microsoft.Extensions.AI` embedding generator.** `new Curator().UseEmbeddingGenerator(generator)`
+  or `services.AddEmbeddingGeneratorEmbedder()` (before `AddFluxCurator()`) — OpenAI, Azure OpenAI, Ollama, LMSupply,
+  IronHive — with no `IEmbedder` to write (`EmbeddingGeneratorEmbedder`). The dimension is the generator's or the one
+  passed; batches are one generator call, and a short result or a vector of another size throws. `FluxCurator` now
+  references `Microsoft.Extensions.AI.Abstractions`.
+
 ### Documentation
 - **`PIIMaskingOptions.MaskCharacter` says what it changes:** the character `Partial` masking uses. The XML doc had said
   «for asterisk masking», but `Asterisk` always uses `*` and `Character` always uses `X`. Behaviour is unchanged.

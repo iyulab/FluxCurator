@@ -38,6 +38,22 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Registers an <see cref="IEmbedder"/> over the container's <c>Microsoft.Extensions.AI</c>
+    /// <c>IEmbeddingGenerator&lt;string, Embedding&lt;float&gt;&gt;</c>, so <c>AddFluxCurator</c> enables semantic chunking on it.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="dimensions">The vector size, when the generator does not report one.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddEmbeddingGeneratorEmbedder(this IServiceCollection services, int? dimensions = null)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddSingleton<IEmbedder>(sp => new Infrastructure.Embedding.EmbeddingGeneratorEmbedder(
+            sp.GetRequiredService<Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>>>(),
+            dimensions));
+        return services;
+    }
+
+    /// <summary>
     /// Adds FluxCurator services with configuration.
     /// </summary>
     /// <param name="services">The service collection.</param>

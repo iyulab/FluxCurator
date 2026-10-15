@@ -125,6 +125,18 @@ public sealed class Curator : IFluxCurator
     }
 
     /// <summary>
+    /// Configures semantic chunking on a <c>Microsoft.Extensions.AI</c> embedding generator (OpenAI, Azure OpenAI, Ollama,
+    /// LMSupply, IronHive) — no <see cref="IEmbedder"/> to write.
+    /// </summary>
+    /// <param name="generator">The generator.</param>
+    /// <param name="dimensions">The vector size, when the generator does not report one.</param>
+    /// <returns>This instance for fluent chaining.</returns>
+    public Curator UseEmbeddingGenerator(
+        Microsoft.Extensions.AI.IEmbeddingGenerator<string, Microsoft.Extensions.AI.Embedding<float>> generator,
+        int? dimensions = null)
+        => UseEmbedder(new Infrastructure.Embedding.EmbeddingGeneratorEmbedder(generator, dimensions));
+
+    /// <summary>
     /// Enables text refinement with default (Light) options.
     /// Text refinement cleans and normalizes raw text before further processing.
     /// </summary>
