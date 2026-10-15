@@ -54,13 +54,30 @@ public class EmbeddingGeneratorEmbedderTests
     }
 
     [Fact]
-    public void TheDimension_ComesFromTheGeneratorOrTheArgument_AndTheyMustAgree()
+    public void TheDimension_ComesFromTheGeneratorOrTheArgument_AndTheyMustAgree_CheckedWhenUsed()
     {
         Assert.Equal(8, new EmbeddingGeneratorEmbedder(new AxisGenerator(_ => 0, reportDimensions: false), dimensions: 8).EmbeddingDimension);
-        var unknown = Assert.Throws<ArgumentException>(() => new EmbeddingGeneratorEmbedder(new AxisGenerator(_ => 0, reportDimensions: false)));
+
+        // Construction succeeds: a container may build the embedder for a host that never chunks semantically.
+        var unknownEmbedder = new EmbeddingGeneratorEmbedder(new AxisGenerator(_ => 0, reportDimensions: false));
+        var unknown = Assert.Throws<InvalidOperationException>(() => unknownEmbedder.EmbeddingDimension);
         Assert.Contains("does not report a dimension", unknown.Message, StringComparison.Ordinal);
-        var contradicting = Assert.Throws<ArgumentException>(() => new EmbeddingGeneratorEmbedder(new AxisGenerator(_ => 0), dimensions: 3));
+
+        var contradictingEmbedder = new EmbeddingGeneratorEmbedder(new AxisGenerator(_ => 0), dimensions: 3);
+        var contradicting = Assert.Throws<InvalidOperationException>(() => contradictingEmbedder.EmbeddingDimension);
         Assert.Contains("reports 4", contradicting.Message, StringComparison.Ordinal);
+
+        Assert.Throws<ArgumentException>(() => new EmbeddingGeneratorEmbedder(new AxisGenerator(_ => 0), dimensions: 0));
+    }
+
+    [Fact]
+    public async Task EmbeddingWithAGeneratorThatReportsNoDimension_FailsAtUse_NamingTheDimension()
+    {
+        var embedder = new EmbeddingGeneratorEmbedder(new AxisGenerator(_ => 0, reportDimensions: false));
+
+        var failure = await Assert.ThrowsAsync<InvalidOperationException>(() => embedder.GenerateEmbeddingAsync("text", Ct));
+
+        Assert.Contains("pass the model's dimension", failure.Message, StringComparison.Ordinal);
     }
 
     [Fact]

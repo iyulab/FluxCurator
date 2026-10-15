@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [Unreleased]
+
+### Changed
+- **Breaking: `EmbeddingGeneratorEmbedder` reads its dimension when it is used, not at construction.** A generator that
+  reports no `EmbeddingGeneratorMetadata.DefaultModelDimensions` (with no `dimensions` argument), or one that contradicts
+  the argument, now fails with `InvalidOperationException` on `EmbeddingDimension` or the first embed instead of
+  `ArgumentException` from the constructor. A container that registers the embedder for every host (FileFlux does) no
+  longer breaks hosts that never chunk semantically. A non-positive `dimensions` is still refused at construction.
+  Migration: catch `InvalidOperationException` at use where you caught the constructor's `ArgumentException`.
+
 ## [0.15.0] - 2026-10-15
 
 ### Added
