@@ -9,7 +9,7 @@ using FluxCurator.Core.Domain;
 /// digits. Passport numbers have no checksum and their shapes are shared with many other identifiers, so a value
 /// without the word is not reported.
 /// </summary>
-public sealed class PassportDetector : PIIDetectorBase
+public sealed partial class PassportDetector : PIIDetectorBase
 {
     /// <summary>Words that say the next value is a passport number.</summary>
     private static readonly string[] ContextWords =
@@ -24,8 +24,16 @@ public sealed class PassportDetector : PIIDetectorBase
     public override string Name => "Passport Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         TokenStart + @"(?:[A-Z]{1,2}[0-9]{6,8}|[A-Z][0-9]{3}[A-Z][0-9]{4}|[0-9]{9})" + TokenEnd;
+
+    [GeneratedRegex(PatternText)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override RegexOptions RegexOptions => RegexOptions.Compiled;

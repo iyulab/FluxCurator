@@ -10,7 +10,7 @@ using FluxCurator.Core.Domain;
 /// (<c>account</c>, <c>acct</c>, <c>계좌</c>, <c>이체</c>, …). Without that word the digits are as likely an order number
 /// or a timestamp, so they are left alone.
 /// </summary>
-public sealed class BankAccountDetector : PIIDetectorBase
+public sealed partial class BankAccountDetector : PIIDetectorBase
 {
     /// <summary>Words that say the next number is an account number.</summary>
     private static readonly string[] ContextWords =
@@ -27,12 +27,20 @@ public sealed class BankAccountDetector : PIIDetectorBase
     public override string Name => "Bank Account Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         TokenStart + @"(?:" +
             @"(?<iban>[A-Z]{2}[0-9]{2}(?: ?[A-Z0-9]{4}){2,7}(?: ?[A-Z0-9]{1,3})?)" +
             @"|" +
             NumberStart + @"(?<domestic>[0-9]{2,6}(?:-[0-9]{1,8}){1,4}|[0-9]{10,16})" + NumberEnd +
         @")" + TokenEnd;
+
+    [GeneratedRegex(PatternText)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override RegexOptions RegexOptions => RegexOptions.Compiled;

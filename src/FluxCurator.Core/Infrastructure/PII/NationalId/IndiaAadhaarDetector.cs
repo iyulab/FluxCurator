@@ -1,11 +1,13 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
+
 /// <summary>
 /// Detects India Aadhaar numbers.
 /// Format: XXXX XXXX XXXX (12 digits)
 /// Uses Verhoeff algorithm for checksum validation.
 /// </summary>
-public sealed class IndiaAadhaarDetector : NationalIdDetectorBase
+public sealed partial class IndiaAadhaarDetector : NationalIdDetectorBase
 {
     // Verhoeff multiplication table
     private static readonly int[,] MultiplicationTable =
@@ -51,9 +53,17 @@ public sealed class IndiaAadhaarDetector : NationalIdDetectorBase
     public override string Name => "India Aadhaar Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: 12 digits with optional spaces or hyphens
         NumberStart + @"\d{4}[\s-]?\d{4}[\s-]?\d{4}" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

@@ -7,7 +7,7 @@ using FluxCurator.Core.Domain;
 /// Detects phone numbers in text.
 /// Supports Korean, US, and international formats.
 /// </summary>
-public sealed class PhoneDetector : PIIDetectorBase
+public sealed partial class PhoneDetector : PIIDetectorBase
 {
     /// <inheritdoc/>
     public override PIIType PIIType => PIIType.Phone;
@@ -16,7 +16,9 @@ public sealed class PhoneDetector : PIIDetectorBase
     public override string Name => "Phone Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         NumberStart + @"(?:" +
             // Korean mobile: 010-1234-5678, 010.1234.5678, 01012345678
             @"01[016789][-.\s]?\d{3,4}[-.\s]?\d{4}|" +
@@ -34,6 +36,12 @@ public sealed class PhoneDetector : PIIDetectorBase
             // digits is as likely to be a count, an amount or an identifier as a phone number.
             @"(?:\(\d{3}\)\s?|\d{3}[-.\s])\d{3}[-.\s]\d{4}" +
         @")" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

@@ -1,5 +1,6 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
@@ -7,7 +8,7 @@ using FluxCurator.Core.Domain;
 /// Validates using the Modulo-11 checksum algorithm.
 /// Format: YYMMDD-GNNNNNN (13 digits)
 /// </summary>
-public sealed class KoreaRRNDetector : NationalIdDetectorBase
+public sealed partial class KoreaRRNDetector : NationalIdDetectorBase
 {
     // Weights for Modulo-11 checksum: 2,3,4,5,6,7,8,9,2,3,4,5
     private static readonly int[] ChecksumWeights = [2, 3, 4, 5, 6, 7, 8, 9, 2, 3, 4, 5];
@@ -28,9 +29,17 @@ public sealed class KoreaRRNDetector : NationalIdDetectorBase
     public override string Name => "Korea RRN Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: YYMMDD-GNNNNNN or YYMMDDGNNNNNN
         NumberStart + @"\d{6}[-\s]?[1-8]\d{6}" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

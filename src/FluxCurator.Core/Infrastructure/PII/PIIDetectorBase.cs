@@ -61,7 +61,18 @@ public abstract class PIIDetectorBase : IPIIDetector
     /// <summary>
     /// Gets the compiled regex pattern.
     /// </summary>
-    protected Regex CompiledPattern => _compiledPattern ??= new Regex(Pattern, RegexOptions);
+    protected Regex CompiledPattern => _compiledPattern ??= CreateRegex();
+
+    /// <summary>
+    /// Creates the regex for <see cref="Pattern"/> and <see cref="RegexOptions"/>, once per detector instance.
+    /// </summary>
+    /// <remarks>
+    /// The default constructs it at run time. A detector whose pattern is a constant can return a
+    /// <see cref="GeneratedRegexAttribute"/> method instead: the matcher is then compiled with the library, so it runs at
+    /// full speed under Native AOT (where <see cref="RegexOptions.Compiled"/> falls back to the interpreter) and costs no
+    /// construction at startup. Every built-in detector does.
+    /// </remarks>
+    protected virtual Regex CreateRegex() => new(Pattern, RegexOptions);
 
     /// <inheritdoc/>
     public virtual IReadOnlyList<PIIMatch> Detect(string text)

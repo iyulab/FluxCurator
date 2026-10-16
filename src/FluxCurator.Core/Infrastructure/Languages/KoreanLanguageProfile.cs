@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 /// Language profile for Korean text processing.
 /// Supports formal (합니다체), informal (해요체), and casual (반말) speech styles.
 /// </summary>
-public sealed class KoreanLanguageProfile : LanguageProfileBase
+public sealed partial class KoreanLanguageProfile : LanguageProfileBase
 {
     private static readonly HashSet<string> KoreanAbbreviations = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -85,8 +85,7 @@ public sealed class KoreanLanguageProfile : LanguageProfileBase
             return [];
 
         var boundaries = new List<int>();
-        var sentenceEndRegex = new Regex(SentenceEndPattern, RegexOptions.Compiled | RegexOptions.Multiline);
-        var matches = sentenceEndRegex.Matches(text);
+        var matches = SentenceEndRegex.Matches(text);
 
         foreach (Match match in matches)
         {
@@ -121,18 +120,13 @@ public sealed class KoreanLanguageProfile : LanguageProfileBase
         var headers = new List<(int Start, int End, string Header)>();
 
         // Find Korean chapter/section markers
-        var chapterPattern = new Regex(
-            @"^[\s]*(?:제\s*\d+\s*[장절조항편부]|\d+\s*[장절조항편부])[^\n]*",
-            RegexOptions.Compiled | RegexOptions.Multiline);
-
-        foreach (Match match in chapterPattern.Matches(text))
+        foreach (Match match in ChapterMarker().Matches(text))
         {
             headers.Add((match.Index, match.Index + match.Length, match.Value.Trim()));
         }
 
         // Find markdown-style headers
-        var markdownPattern = new Regex(@"^#{1,6}\s+[^\n]+", RegexOptions.Compiled | RegexOptions.Multiline);
-        foreach (Match match in markdownPattern.Matches(text))
+        foreach (Match match in MarkdownHeader().Matches(text))
         {
             headers.Add((match.Index, match.Index + match.Length, match.Value.Trim()));
         }
@@ -212,4 +206,10 @@ public sealed class KoreanLanguageProfile : LanguageProfileBase
                (koreanQuotes > 0) ||
                (parentheses > 0);
     }
+
+    [GeneratedRegex(@"^[\s]*(?:제\s*\d+\s*[장절조항편부]|\d+\s*[장절조항편부])[^\n]*", RegexOptions.Multiline)]
+    private static partial Regex ChapterMarker();
+
+    [GeneratedRegex(@"^#{1,6}\s+[^\n]+", RegexOptions.Multiline)]
+    private static partial Regex MarkdownHeader();
 }

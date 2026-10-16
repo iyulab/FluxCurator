@@ -1,5 +1,6 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
@@ -10,7 +11,7 @@ using FluxCurator.Core.Domain;
 /// - SSS: Sequence number (odd=male, even=female)
 /// - C: Check character (0-9 or X)
 /// </summary>
-public sealed class ChinaIdCardDetector : NationalIdDetectorBase
+public sealed partial class ChinaIdCardDetector : NationalIdDetectorBase
 {
     // Weights for check digit calculation (ISO 7064 MOD 11-2)
     private static readonly int[] Weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
@@ -34,9 +35,17 @@ public sealed class ChinaIdCardDetector : NationalIdDetectorBase
     public override string Name => "China ID Card Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: 17 digits + check character (digit or X)
         NumberStart + @"\d{17}[\dXx]" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

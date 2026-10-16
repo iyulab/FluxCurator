@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Published with Native AOT in CI and run once: FluxCurator.Core's masking has to work in a trimmed native executable,
+       not only pass the trim/AOT analyzers (IsAotCompatible on the library). Not a test project and not packed. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PublishAot>true</PublishAot>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\FluxCurator.Core\FluxCurator.Core.csproj" />
+  </ItemGroup>
+
+</Project>

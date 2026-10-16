@@ -1,11 +1,12 @@
 namespace FluxCurator.Core.Infrastructure.PII;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
 /// Detects email addresses in text.
 /// </summary>
-public sealed class EmailDetector : PIIDetectorBase
+public sealed partial class EmailDetector : PIIDetectorBase
 {
     /// <inheritdoc/>
     public override PIIType PIIType => PIIType.Email;
@@ -21,13 +22,22 @@ public sealed class EmailDetector : PIIDetectorBase
     /// domain ends at the first character that is not an ASCII letter or digit, so a particle written directly after
     /// the address (<c>홍길동@회사.kr로</c>) is not taken into it.
     /// </remarks>
-    protected override string Pattern =>
+    /// <inheritdoc/>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         @"(?<![\p{L}\p{M}\p{N}._%+-])" +
         // Not the password@host of a URL's authority (scheme://user:password@host): that is a credential and a host,
         // reported by the URL credential detector, not an address someone receives mail at.
         @"(?<![A-Za-z][A-Za-z0-9+.\-]*://[^\s/?#@]*:)" +
         @"[\p{L}\p{M}\p{N}._%+-]+@[\p{L}\p{M}\p{N}.-]+\." +
         @"(?:[A-Za-z]{2,63}" + TokenEnd + @"|[\p{L}\p{M}-[A-Za-z]]{2,63})";
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

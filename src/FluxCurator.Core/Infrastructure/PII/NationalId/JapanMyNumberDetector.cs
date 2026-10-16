@@ -1,12 +1,13 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
 /// Detects Japanese My Number (Individual Number / マイナンバー).
 /// Format: 12 digits with check digit validation.
 /// </summary>
-public sealed class JapanMyNumberDetector : NationalIdDetectorBase
+public sealed partial class JapanMyNumberDetector : NationalIdDetectorBase
 {
     // Weights for check digit calculation
     private static readonly int[] Weights = [6, 5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
@@ -27,9 +28,17 @@ public sealed class JapanMyNumberDetector : NationalIdDetectorBase
     public override string Name => "Japan My Number Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: 12 consecutive digits, optionally with spaces or hyphens
         NumberStart + @"\d{4}[-\s]?\d{4}[-\s]?\d{4}" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

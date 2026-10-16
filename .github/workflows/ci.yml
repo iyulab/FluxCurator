@@ -32,3 +32,10 @@ jobs:
     - name: Test
       # --hangdump/--hangdump-timeout is MTP's equivalent of VSTest's --blame-hang.
       run: dotnet test --solution FluxCurator.slnx --no-build --configuration Release --verbosity normal --hangdump --hangdump-timeout 5m
+
+    - name: Native AOT smoke
+      # FluxCurator.Core declares IsAotCompatible; this publishes a small executable that masks one line with Native AOT
+      # and runs it, so a trimmed-away detector or a regex that fails in a native build fails CI, not a consumer's edge build.
+      run: |
+        dotnet publish tests/FluxCurator.AotSmoke/FluxCurator.AotSmoke.csproj --configuration Release --runtime linux-x64 --output aot-smoke
+        ./aot-smoke/FluxCurator.AotSmoke

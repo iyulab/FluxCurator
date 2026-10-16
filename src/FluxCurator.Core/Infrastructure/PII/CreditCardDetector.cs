@@ -1,12 +1,13 @@
 namespace FluxCurator.Core.Infrastructure.PII;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
 /// Detects credit card numbers in text.
 /// Validates using the Luhn algorithm.
 /// </summary>
-public sealed class CreditCardDetector : PIIDetectorBase
+public sealed partial class CreditCardDetector : PIIDetectorBase
 {
     /// <inheritdoc/>
     public override PIIType PIIType => PIIType.CreditCard;
@@ -15,7 +16,9 @@ public sealed class CreditCardDetector : PIIDetectorBase
     public override string Name => "Credit Card Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         NumberStart + @"(?:" +
             // Standard 16-digit with separators: 1234-5678-9012-3456
             @"\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}|" +
@@ -24,6 +27,12 @@ public sealed class CreditCardDetector : PIIDetectorBase
             // Continuous digits (13-19 digits)
             @"\d{13,19}" +
         @")" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

@@ -38,6 +38,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 | Pipeline processing — Refine → Filter → Mask → Chunk in one call | `Curator.PreprocessAsync` → `PreprocessingResult` | Runs the steps you enabled with the `With…` calls |
 | Batch processing | `Curator.CreateBatchProcessor()` → `BatchProcessor` (`AddTexts`, `WithMaxConcurrency`, `ProcessAsync`, `PreprocessAsync`) | Opt-in |
 | Dependency injection | `services.AddFluxCurator(...)` registers `IChunkerFactory` (singleton) and `IFluxCurator` (transient, a configured `Curator`) | Call `AddFluxCurator`; inject `IFluxCurator` (namespace `FluxCurator.Core`) |
+| Native AOT and trimming — `FluxCurator.Core` (masking, detection, chunking, refinement) in a trimmed or Native AOT executable without warnings; every built-in detector matches with a source-generated regex | `FluxCurator.Core` (`IsAotCompatible`) | Nothing to turn on: reference `FluxCurator.Core` from a project with `PublishAot` or `PublishTrimmed`. A custom detector built on `PIIDetectorBase` can override `CreateRegex()` to return a `[GeneratedRegex]` method; otherwise its `Pattern` is constructed at run time (interpreted under Native AOT) |
 | FileFlux integration | FileFlux delegates its chunking to FluxCurator through `IChunkerFactory` | The adapter lives in the FileFlux package — see [FileFlux Integration](docs/fileflux-integration.md) |
 
 ## Installation
@@ -459,6 +460,9 @@ public class EmployeeIdDetector : PIIDetectorBase
     }
 }
 ```
+
+A detector whose pattern is a constant can also return a `[GeneratedRegex]` method from `CreateRegex()`, which keeps
+its matcher compiled under Native AOT, as the built-in detectors do.
 
 ### Custom National ID Detector
 

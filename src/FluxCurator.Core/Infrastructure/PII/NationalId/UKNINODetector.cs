@@ -7,7 +7,7 @@ using FluxCurator.Core.Domain;
 /// Detects UK National Insurance Numbers (NINO).
 /// Format: AB 12 34 56 C (2 letters + 6 digits + 1 letter suffix)
 /// </summary>
-public sealed class UKNINODetector : NationalIdDetectorBase
+public sealed partial class UKNINODetector : NationalIdDetectorBase
 {
     // Invalid prefix combinations
     private static readonly HashSet<string> InvalidPrefixes = new(StringComparer.OrdinalIgnoreCase)
@@ -49,9 +49,17 @@ public sealed class UKNINODetector : NationalIdDetectorBase
     public override string Name => "UK NINO Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: AB 12 34 56 C or AB123456C with optional spaces
         NumberStart + @"[A-Za-z]{2}[\s]?\d{2}[\s]?\d{2}[\s]?\d{2}[\s]?[A-Da-d]" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

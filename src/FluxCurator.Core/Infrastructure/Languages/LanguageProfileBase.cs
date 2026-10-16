@@ -6,7 +6,7 @@ using FluxCurator.Core.Core;
 /// <summary>
 /// Base implementation for language profiles with common functionality.
 /// </summary>
-public abstract class LanguageProfileBase : ILanguageProfile
+public abstract partial class LanguageProfileBase : ILanguageProfile
 {
     private Regex? _sentenceEndRegex;
     private Regex? _sectionMarkerRegex;
@@ -80,8 +80,7 @@ public abstract class LanguageProfileBase : ILanguageProfile
             return [];
 
         var boundaries = new List<int>();
-        var paragraphPattern = new Regex(@"\n\s*\n", RegexOptions.Compiled);
-        var matches = paragraphPattern.Matches(text);
+        var matches = ParagraphBreak().Matches(text);
 
         foreach (Match match in matches)
         {
@@ -143,4 +142,7 @@ public abstract class LanguageProfileBase : ILanguageProfile
 
         return Abbreviations.Contains(word.Trim());
     }
+
+    [GeneratedRegex(@"\n\s*\n")]
+    private static partial Regex ParagraphBreak();
 }

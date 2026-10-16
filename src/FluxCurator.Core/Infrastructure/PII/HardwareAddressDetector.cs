@@ -8,7 +8,7 @@ using FluxCurator.Core.Domain;
 /// <c>00-1A-2B-3C-4D-5E</c>) and the dotted form (<c>001a.2b3c.4d5e</c>). A device address identifies a person's device
 /// as an IP address does. The all-zero and broadcast addresses identify nothing and are not reported.
 /// </summary>
-public sealed class HardwareAddressDetector : PIIDetectorBase
+public sealed partial class HardwareAddressDetector : PIIDetectorBase
 {
     /// <inheritdoc/>
     public override PIIType PIIType => PIIType.HardwareAddress;
@@ -17,11 +17,19 @@ public sealed class HardwareAddressDetector : PIIDetectorBase
     public override string Name => "Hardware Address Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         @"(?<![0-9A-Fa-f]|[0-9A-Fa-f][:.\-])(?:" +
             @"[0-9A-Fa-f]{2}(?<sep>[:\-])(?:[0-9A-Fa-f]{2}\k<sep>){4}[0-9A-Fa-f]{2}" +
             @"|[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}" +
         @")(?![0-9A-Fa-f]|[:.\-][0-9A-Fa-f])";
+
+    [GeneratedRegex(PatternText)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override RegexOptions RegexOptions => RegexOptions.Compiled;

@@ -1,5 +1,6 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
@@ -7,7 +8,7 @@ using FluxCurator.Core.Domain;
 /// DNI Format: 8 digits + letter (e.g., 12345678Z)
 /// NIE Format: Letter + 7 digits + letter (e.g., X1234567L)
 /// </summary>
-public sealed class SpainDNIDetector : NationalIdDetectorBase
+public sealed partial class SpainDNIDetector : NationalIdDetectorBase
 {
     // Check letter sequence (23 letters, excluding I, Ñ, O, U)
     private const string CheckLetters = "TRWAGMYFPDXBNJZSQVHLCKE";
@@ -28,13 +29,21 @@ public sealed class SpainDNIDetector : NationalIdDetectorBase
     public override string Name => "Spain DNI/NIE Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         NumberStart + @"(?:" +
             // DNI: 8 digits + letter
             @"\d{8}[A-Za-z]|" +
             // NIE: X/Y/Z + 7 digits + letter
             @"[XYZxyz]\d{7}[A-Za-z]" +
         @")" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

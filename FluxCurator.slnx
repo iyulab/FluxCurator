@@ -6,6 +6,7 @@
   </Configurations>
   <Folder Name="/src/" />
   <Folder Name="/tests/">
+    <Project Path="tests/FluxCurator.AotSmoke/FluxCurator.AotSmoke.csproj" />
     <Project Path="tests/FluxCurator.Tests/FluxCurator.Tests.csproj" />
   </Folder>
   <Project Path="src/FluxCurator.Core/FluxCurator.Core.csproj" />

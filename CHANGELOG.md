@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [Unreleased]
+
+### Added
+- **`FluxCurator.Core` is declared trimming- and Native-AOT-compatible (`IsAotCompatible`).** PII masking, detection,
+  chunking and refinement run in a trimmed or Native AOT executable without warnings; CI publishes a small Native AOT
+  executable that masks a line and runs it.
+- **`PIIDetectorBase.CreateRegex()`** — a detector can return a source-generated regex (`[GeneratedRegex]`) instead of the
+  one constructed from `Pattern` at run time. Every built-in detector now does, so their matchers stay compiled under
+  Native AOT (where `RegexOptions.Compiled` falls back to the interpreter) and cost nothing to construct.
+
+### Fixed
+- **Korean sentence and section detection no longer compiles its regexes on every call.** `KoreanLanguageProfile`
+  built a `RegexOptions.Compiled` regex per `FindSentenceBoundaries` / `FindSectionHeaders` call, and every profile did
+  the same for paragraph boundaries; they now use the profile's cached regex or a source-generated one.
+
 ## [0.16.0] - 2026-10-16
 
 ### Changed

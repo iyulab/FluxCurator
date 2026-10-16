@@ -1,11 +1,13 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
+
 /// <summary>
 /// Detects Australia Tax File Numbers (TFN).
 /// Format: XXX XXX XXX (9 digits)
 /// Uses weighted sum modulo 11 for checksum validation.
 /// </summary>
-public sealed class AustraliaTFNDetector : NationalIdDetectorBase
+public sealed partial class AustraliaTFNDetector : NationalIdDetectorBase
 {
     // Weights for TFN validation
     private static readonly int[] Weights = { 1, 4, 3, 7, 5, 8, 6, 9, 10 };
@@ -26,9 +28,17 @@ public sealed class AustraliaTFNDetector : NationalIdDetectorBase
     public override string Name => "Australia TFN Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: 9 digits with optional spaces
         NumberStart + @"\d{3}[\s]?\d{3}[\s]?\d{3}" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

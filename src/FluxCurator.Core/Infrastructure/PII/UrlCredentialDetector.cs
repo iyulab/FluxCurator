@@ -22,7 +22,16 @@ public sealed partial class UrlCredentialDetector : PIIDetectorBase
     public override string Name => "URL Credential Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern => @"(?<![A-Za-z0-9+.\-])[A-Za-z][A-Za-z0-9+.\-]*://[^\s""'<>`]+";
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
+        @"(?<![A-Za-z0-9+.\-])[A-Za-z][A-Za-z0-9+.\-]*://[^\s""'<>`]+";
+
+    [GeneratedRegex(PatternText)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override RegexOptions RegexOptions => RegexOptions.Compiled;

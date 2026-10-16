@@ -1,11 +1,13 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
+
 /// <summary>
 /// Detects Canada Social Insurance Numbers (SIN).
 /// Format: XXX-XXX-XXX (9 digits)
 /// Uses Luhn algorithm for checksum validation.
 /// </summary>
-public sealed class CanadaSINDetector : NationalIdDetectorBase
+public sealed partial class CanadaSINDetector : NationalIdDetectorBase
 {
     /// <inheritdoc/>
     public override string LanguageCode => "en-CA";
@@ -23,9 +25,17 @@ public sealed class CanadaSINDetector : NationalIdDetectorBase
     public override string Name => "Canada SIN Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: 9 digits with optional spaces or hyphens
         NumberStart + @"\d{3}[\s-]?\d{3}[\s-]?\d{3}" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

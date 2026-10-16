@@ -1,5 +1,6 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
@@ -14,7 +15,7 @@ using FluxCurator.Core.Domain;
 /// - NNN: Registration number
 /// - CC: Check digits (97 - (13-digit number mod 97))
 /// </summary>
-public sealed class FranceINSEEDetector : NationalIdDetectorBase
+public sealed partial class FranceINSEEDetector : NationalIdDetectorBase
 {
     /// <inheritdoc/>
     public override string LanguageCode => "fr";
@@ -32,9 +33,17 @@ public sealed class FranceINSEEDetector : NationalIdDetectorBase
     public override string Name => "France INSEE Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: 15 digits with optional spaces
         NumberStart + @"[12]\s?\d{2}\s?\d{2}\s?\d{2,3}\s?\d{3}\s?\d{3}\s?\d{2}" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

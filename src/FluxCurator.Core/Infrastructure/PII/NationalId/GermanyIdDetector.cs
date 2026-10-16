@@ -1,5 +1,6 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
@@ -7,7 +8,7 @@ using FluxCurator.Core.Domain;
 /// - Personalausweis (ID card): 10 characters (1 letter + 9 alphanumeric)
 /// - Steuer-ID (Tax ID): 11 digits
 /// </summary>
-public sealed class GermanyIdDetector : NationalIdDetectorBase
+public sealed partial class GermanyIdDetector : NationalIdDetectorBase
 {
     /// <inheritdoc/>
     public override string LanguageCode => "de";
@@ -25,7 +26,9 @@ public sealed class GermanyIdDetector : NationalIdDetectorBase
     public override string Name => "Germany ID Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         NumberStart + @"(?:" +
             // Personalausweis (since 2010): a letter and 8 characters from the ID card alphabet (digits and the
             // consonants C F G H J K L M N P R T V W X Y Z - no vowels, so words and hostnames do not fit), then the
@@ -34,6 +37,12 @@ public sealed class GermanyIdDetector : NationalIdDetectorBase
             // Steuer-ID: 11 digits
             @"\d{11}" +
         @")" + NumberEnd;
+
+    [GeneratedRegex(PatternText)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override System.Text.RegularExpressions.RegexOptions RegexOptions =>

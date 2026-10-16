@@ -8,7 +8,7 @@ using FluxCurator.Core.Domain;
 /// <summary>
 /// Detects IPv4 and IPv6 addresses in text.
 /// </summary>
-public sealed class IPAddressDetector : PIIDetectorBase
+public sealed partial class IPAddressDetector : PIIDetectorBase
 {
     /// <inheritdoc/>
     public override PIIType PIIType => PIIType.IPAddress;
@@ -17,7 +17,9 @@ public sealed class IPAddressDetector : PIIDetectorBase
     public override string Name => "IP Address Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         TokenStart + @"(?:" +
             // IPv4: 1.2.3.4 through 255.255.255.255, not a slice of a longer dotted run such as 1.2.3.4.5
             @"(?<!\d\.)(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?!\.\d)" +
@@ -31,6 +33,12 @@ public sealed class IPAddressDetector : PIIDetectorBase
                 @"|::(?:[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,6})?" +
             @")(?!:[0-9a-fA-F])" +
         @")" + TokenEnd;
+
+    [GeneratedRegex(PatternText)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override RegexOptions RegexOptions => RegexOptions.Compiled;

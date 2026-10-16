@@ -1,5 +1,6 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
@@ -14,7 +15,7 @@ using FluxCurator.Core.Domain;
 /// - CCCC: Municipality code (4 chars)
 /// - C: Check character
 /// </summary>
-public sealed class ItalyCodiceFiscaleDetector : NationalIdDetectorBase
+public sealed partial class ItalyCodiceFiscaleDetector : NationalIdDetectorBase
 {
     // Month codes
     private static readonly Dictionary<char, int> MonthCodes = new()
@@ -66,9 +67,17 @@ public sealed class ItalyCodiceFiscaleDetector : NationalIdDetectorBase
     public override string Name => "Italy Codice Fiscale Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: 6 letters + 2 digits + letter + 2 digits + letter + 3 alphanumeric + letter
         NumberStart + @"[A-Za-z]{6}\d{2}[A-EHLMPRSTa-ehlmprst]\d{2}[A-Za-z]\d{3}[A-Za-z]" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)

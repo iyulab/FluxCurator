@@ -1,5 +1,6 @@
 namespace FluxCurator.Core.Infrastructure.PII.NationalId;
 
+using System.Text.RegularExpressions;
 using FluxCurator.Core.Domain;
 
 /// <summary>
@@ -7,7 +8,7 @@ using FluxCurator.Core.Domain;
 /// Format: XXX-XX-XXXX (9 digits)
 /// Validates area number ranges and excludes invalid patterns.
 /// </summary>
-public sealed class USSSNDetector : NationalIdDetectorBase
+public sealed partial class USSSNDetector : NationalIdDetectorBase
 {
     /// <inheritdoc/>
     public override string LanguageCode => "en-US";
@@ -25,9 +26,17 @@ public sealed class USSSNDetector : NationalIdDetectorBase
     public override string Name => "US SSN Detector";
 
     /// <inheritdoc/>
-    protected override string Pattern =>
+    protected override string Pattern => PatternText;
+
+    private const string PatternText =
         // Format: XXX-XX-XXXX with optional separators
         NumberStart + @"\d{3}[-\s]?\d{2}[-\s]?\d{4}" + NumberEnd;
+
+    [GeneratedRegex(PatternText, RegexOptions.IgnoreCase)]
+    private static partial Regex GeneratedPattern();
+
+    /// <inheritdoc/>
+    protected override Regex CreateRegex() => GeneratedPattern();
 
     /// <inheritdoc/>
     protected override bool ValidateMatch(string value, out float confidence)
