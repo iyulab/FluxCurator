@@ -10,7 +10,7 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-    <Version>0.16.0</Version>
+    <Version>0.17.0</Version>
     <!-- nuget.org «Release Notes»: the GitHub release of this version (its notes are the CHANGELOG section). -->
     <PackageReleaseNotes>https://github.com/iyulab/FluxCurator/releases/tag/v$(Version)</PackageReleaseNotes>
   </PropertyGroup>
