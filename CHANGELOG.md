@@ -6,6 +6,13 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 
 ## [Unreleased]
 
+### Added
+- **Korean driver's license numbers are detected and masked** (`PIIType.DriversLicense`, new `DriversLicenseDetector`,
+  registered by default): the written form `11-22-123456-78` on its own, and its twelve digits after a license word
+  (`운전면허`, `driver's license`, `driving licence`, `免許`). The type was declared with no built-in detector;
+  `PIIMasker.CoveredTypes` now includes it whenever `TypesToMask` does (`PIIType.All` / `PIIMaskingOptions.Strict`) —
+  the default `PIIType.Common` is unchanged.
+
 ### Dependencies
 - .NET runtime packages 10.0.12 -> 10.0.13 (the 10.0 servicing band; `Microsoft.Extensions.*` and their siblings move together).
 

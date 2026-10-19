@@ -41,9 +41,9 @@ public enum PIIType
     Passport = 1 << 4,
 
     /// <summary>
-    /// Driver's license numbers.
+    /// Driver's license numbers: the Korean written form <c>11-22-123456-78</c>, or its twelve digits after a license word
+    /// (<c>운전면허</c>, <c>driver's license</c>, ...).
     /// </summary>
-    /// <remarks>No built-in detector reports this type: it is a category for a detector you register with <c>PIIMasker.RegisterDetector</c>. <c>PIIMasker.CoveredTypes</c> says which types the masker can actually find.</remarks>
     DriversLicense = 1 << 5,
 
     /// <summary>

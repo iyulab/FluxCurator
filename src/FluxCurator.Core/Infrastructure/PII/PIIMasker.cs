@@ -146,6 +146,7 @@ public sealed class PIIMasker : IPIIMasker
         AddBuiltInDetector(new IPAddressDetector());
         AddBuiltInDetector(new BankAccountDetector());
         AddBuiltInDetector(new PassportDetector());
+        AddBuiltInDetector(new DriversLicenseDetector());
         AddBuiltInDetector(new UrlCredentialDetector());
         AddBuiltInDetector(new HardwareAddressDetector());
 

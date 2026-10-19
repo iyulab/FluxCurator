@@ -24,7 +24,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 | Feature | Entry point | How to turn it on |
 |---------|-------------|-------------------|
 | Text refinement — remove blank/duplicate lines, empty list markers, custom patterns | `Curator.WithTextRefinement(...)`, `Curator.RefineText`, `TextRefiner` | Opt-in: call `WithTextRefinement` (presets on `TextRefineOptions`) |
-| Multilingual PII masking — emails, phones, national IDs (13 countries), credit cards, IP addresses, bank accounts, passports, URL credentials, MAC addresses | `Curator.WithPIIMasking(...)` then `MaskPII` / `DetectPII` / `ContainsPII`; `PIIMasker` | Opt-in: call `WithPIIMasking` (`MaskPII` throws until you do); DI: `FluxCuratorOptions.EnablePIIMasking`. The default `TypesToMask` is `PIIType.Common` (email, phone, national ID, credit card); IP, bank account, passport, URL credential and MAC address need `TypesToMask` set to include them (or `PIIMaskingOptions.Strict`, which uses `PIIType.All`) |
+| Multilingual PII masking — emails, phones, national IDs (13 countries), credit cards, IP addresses, bank accounts, passports, Korean driver's licenses, URL credentials, MAC addresses | `Curator.WithPIIMasking(...)` then `MaskPII` / `DetectPII` / `ContainsPII`; `PIIMasker` | Opt-in: call `WithPIIMasking` (`MaskPII` throws until you do); DI: `FluxCuratorOptions.EnablePIIMasking`. The default `TypesToMask` is `PIIType.Common` (email, phone, national ID, credit card); IP, bank account, passport, driver's license, URL credential and MAC address need `TypesToMask` set to include them (or `PIIMaskingOptions.Strict`, which uses `PIIType.All`) |
 | National ID checksum validation — SSN (US), RRN (Korea), Aadhaar (India), SIN (Canada), … | `NationalIdRegistry`, `NationalIdDetectorBase` | On whenever PII masking is on; all 13 detectors are registered by default |
 | Custom PII detectors | `Curator.RegisterPIIDetector`, `PIIMasker.RegisterDetector`, `PIIDetectorBase` | Opt-in: register your detector |
 | Content filtering — rule and blocklist based | `Curator.WithContentFiltering(...)` then `FilterContent`; `RuleBasedFilter`, `ContentFilterManager` | Opt-in: call `WithContentFiltering`. **No word lists are built in** — supply `ContentFilterOptions.CustomBlocklist` / `CustomPatterns` (or `RuleBasedFilter.AddRule`), otherwise nothing is filtered |
@@ -326,10 +326,11 @@ FluxCurator includes language profiles for accurate sentence detection and token
 | `IPAddress` | IPv4 and IPv6 addresses | Format validation |
 | `BankAccount` | An IBAN; a 10-16 digit account number (plain or `110-234-567890`) after an account word (`account`, `acct`, `계좌`, `이체`, …) on the same line | IBAN mod-97; context word for domestic numbers |
 | `Passport` | `M12345678`, the Korean 2021 form `M123A4567`, or nine digits, after a passport word (`passport`, `여권`, `旅券`, …) | Context word |
+| `DriversLicense` | Korean driver's license: the written form `11-22-123456-78`, or its twelve digits after a license word (`운전면허`, `driver's license`, …) | Written form or context word |
 | `UrlCredential` | The secret inside a URL: the value of `token`, `access_token`, `api_key`, `key`, `sig`, `password`, `secret`, `code`, … parameters and the password of `scheme://user:password@host`. Only the secret is masked: `…/users?token=[CREDENTIAL]&page=2` | Credential-named parameter |
 | `HardwareAddress` | MAC addresses `00:1A:2B:3C:4D:5E`, `00-1A-…`, `001a.2b3c.4d5e` | One separator throughout; all-zero and broadcast skipped |
 
-`DriversLicense`, `PersonName`, `Address`, `TaxId` and `SocialSecurityNumber` are categories for detectors you
+`PersonName`, `Address`, `TaxId` and `SocialSecurityNumber` are categories for detectors you
 register: **no built-in detector reports them** (US SSN, UK NINO and the other national numbers report `NationalId`).
 `PIIMasker.CoveredTypes` returns the types a masker can actually find with its options and registered detectors —
 assert on it when a masking policy requires a type.

@@ -71,7 +71,7 @@ public class DeclaredTypeDetectorTests
         foreach (var type in new[]
                  {
                      PIIType.Email, PIIType.Phone, PIIType.CreditCard, PIIType.IPAddress, PIIType.NationalId,
-                     PIIType.BankAccount, PIIType.Passport, PIIType.UrlCredential, PIIType.HardwareAddress,
+                     PIIType.BankAccount, PIIType.Passport, PIIType.DriversLicense, PIIType.UrlCredential, PIIType.HardwareAddress,
                  })
         {
             Assert.True(covered.HasFlag(type), $"{type} should be covered");
@@ -79,7 +79,6 @@ public class DeclaredTypeDetectorTests
 
         Assert.False(covered.HasFlag(PIIType.PersonName));
         Assert.False(covered.HasFlag(PIIType.Address));
-        Assert.False(covered.HasFlag(PIIType.DriversLicense));
     }
 
     [Fact]
