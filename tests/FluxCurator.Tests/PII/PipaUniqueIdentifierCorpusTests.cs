@@ -49,4 +49,14 @@ public class PipaUniqueIdentifierCorpusTests
 
         Assert.True(types.Contains(TypeByKind[kind]), $"expected {TypeByKind[kind]} in «{text}», found [{string.Join(", ", types)}]");
     }
+
+    // The Korean preset is what a caller reaches for — it must mask the same statutory set, not only Common.
+    [Theory]
+    [MemberData(nameof(Samples))]
+    public void Every_sample_is_masked_by_the_Korean_preset(string kind, string text)
+    {
+        var masked = new PIIMasker(PIIMaskingOptions.ForLanguage("ko")).Mask(text);
+
+        Assert.True(masked.PIICount > 0, $"ForLanguage(\"ko\") left the {kind} sample unmasked: «{masked.MaskedText}»");
+    }
 }

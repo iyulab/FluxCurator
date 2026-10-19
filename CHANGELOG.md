@@ -6,6 +6,13 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 
 ## [Unreleased]
 
+### Changed
+- **Breaking: the Korean preset masks passport and driver's license numbers too.** `PIIMaskingOptions.ForLanguage("ko")`
+  (and `ForLanguages(...)` with `ko`, any region tag such as `ko-KR`) now masks `Common` plus `Passport | DriversLicense` —
+  the unique identifiers of the Personal Information Protection Act, Art. 24, the same set FluxGuard acts on by default.
+  Other presets and the `Common` default are unchanged. Migration: to keep the previous set,
+  `options.TypesToMask &= ~(PIIType.Passport | PIIType.DriversLicense)`.
+
 ### Added
 - **Korean driver's license numbers are detected and masked** (`PIIType.DriversLicense`, new `DriversLicenseDetector`,
   registered by default): the written form `11-22-123456-78` on its own, and its twelve digits after a license word

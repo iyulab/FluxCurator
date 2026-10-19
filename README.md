@@ -24,7 +24,7 @@ FluxCurator is a text preprocessing library for RAG (Retrieval-Augmented Generat
 | Feature | Entry point | How to turn it on |
 |---------|-------------|-------------------|
 | Text refinement — remove blank/duplicate lines, empty list markers, custom patterns | `Curator.WithTextRefinement(...)`, `Curator.RefineText`, `TextRefiner` | Opt-in: call `WithTextRefinement` (presets on `TextRefineOptions`) |
-| Multilingual PII masking — emails, phones, national IDs (13 countries), credit cards, IP addresses, bank accounts, passports, Korean driver's licenses, URL credentials, MAC addresses | `Curator.WithPIIMasking(...)` then `MaskPII` / `DetectPII` / `ContainsPII`; `PIIMasker` | Opt-in: call `WithPIIMasking` (`MaskPII` throws until you do); DI: `FluxCuratorOptions.EnablePIIMasking`. The default `TypesToMask` is `PIIType.Common` (email, phone, national ID, credit card); IP, bank account, passport, driver's license, URL credential and MAC address need `TypesToMask` set to include them (or `PIIMaskingOptions.Strict`, which uses `PIIType.All`) |
+| Multilingual PII masking — emails, phones, national IDs (13 countries), credit cards, IP addresses, bank accounts, passports, Korean driver's licenses, URL credentials, MAC addresses | `Curator.WithPIIMasking(...)` then `MaskPII` / `DetectPII` / `ContainsPII`; `PIIMasker` | Opt-in: call `WithPIIMasking` (`MaskPII` throws until you do); DI: `FluxCuratorOptions.EnablePIIMasking`. The default `TypesToMask` is `PIIType.Common` (email, phone, national ID, credit card); IP, bank account, passport, driver's license, URL credential and MAC address need `TypesToMask` set to include them (or `PIIMaskingOptions.Strict`, which uses `PIIType.All`). The Korean preset `PIIMaskingOptions.ForLanguage("ko")` adds passport and driver's license numbers — the unique identifiers of PIPA Art. 24 |
 | National ID checksum validation — SSN (US), RRN (Korea), Aadhaar (India), SIN (Canada), … | `NationalIdRegistry`, `NationalIdDetectorBase` | On whenever PII masking is on; all 13 detectors are registered by default |
 | Custom PII detectors | `Curator.RegisterPIIDetector`, `PIIMasker.RegisterDetector`, `PIIDetectorBase` | Opt-in: register your detector |
 | Content filtering — rule and blocklist based | `Curator.WithContentFiltering(...)` then `FilterContent`; `RuleBasedFilter`, `ContentFilterManager` | Opt-in: call `WithContentFiltering`. **No word lists are built in** — supply `ContentFilterOptions.CustomBlocklist` / `CustomPatterns` (or `RuleBasedFilter.AddRule`), otherwise nothing is filtered |
@@ -316,7 +316,8 @@ FluxCurator includes language profiles for accurate sentence detection and token
 
 `PIIMaskingOptions.TypesToMask` selects which built-in detectors run. Its default, `PIIType.Common`, covers `Email`,
 `Phone`, `CreditCard` and `NationalId`; the other types below are detected only when you include them (for example
-`TypesToMask = PIIType.All`, or the `PIIMaskingOptions.Strict` preset).
+`TypesToMask = PIIType.All`, or the `PIIMaskingOptions.Strict` preset). The region presets `ForLanguage` / `ForLanguages`
+add the identifiers a region's law singles out: for Korean (`ko`), `Passport` and `DriversLicense` (PIPA Art. 24).
 
 | Type | Description | Validation |
 |------|-------------|------------|

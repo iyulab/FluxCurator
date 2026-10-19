@@ -158,27 +158,57 @@ public sealed class PIIMaskingOptions
     public static PIIMaskingOptions Default => new();
 
     /// <summary>
-    /// Creates options for a specific language/region.
+    /// The identifiers a region's law singles out, masked by the region presets on top of <see cref="PIIType.Common"/>.
+    /// Keyed by the primary language subtag.
+    /// </summary>
+    /// <remarks>
+    /// <c>ko</c>: the unique identifiers of the Personal Information Protection Act, Art. 24 — resident registration
+    /// numbers (foreigner registration numbers included, both <see cref="PIIType.NationalId"/>), passport numbers and
+    /// driver's license numbers.
+    /// </remarks>
+    private static readonly Dictionary<string, PIIType> StatutoryIdentifiers = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["ko"] = PIIType.NationalId | PIIType.Passport | PIIType.DriversLicense,
+    };
+
+    private static PIIType RegionTypes(IEnumerable<string> languageCodes)
+    {
+        var types = PIIType.Common;
+        foreach (var code in languageCodes)
+        {
+            var primary = code.Split('-', '_')[0];
+            if (StatutoryIdentifiers.TryGetValue(primary, out var statutory))
+            {
+                types |= statutory;
+            }
+        }
+
+        return types;
+    }
+
+    /// <summary>
+    /// Creates options for a specific language/region: <see cref="PIIType.Common"/> plus the identifiers that region's
+    /// law singles out — for Korean (<c>ko</c>), passport and driver's license numbers too (PIPA Art. 24).
     /// </summary>
     /// <param name="languageCode">ISO 639-1 language code or IETF tag (e.g., "ko", "en-US", "ja")</param>
     /// <returns>Options configured for the specified language.</returns>
     public static PIIMaskingOptions ForLanguage(string languageCode) => new()
     {
         LanguageCodes = [languageCode],
-        TypesToMask = PIIType.Common,
+        TypesToMask = RegionTypes([languageCode]),
         Strategy = MaskingStrategy.Token
     };
 
     /// <summary>
-    /// Creates options for multiple languages.
-    /// Useful for multilingual documents.
+    /// Creates options for multiple languages: <see cref="PIIType.Common"/> plus the identifiers each region's law singles
+    /// out (see <see cref="ForLanguage"/>). Useful for multilingual documents.
     /// </summary>
     /// <param name="languageCodes">ISO 639-1 language codes or IETF tags.</param>
     /// <returns>Options configured for the specified languages.</returns>
     public static PIIMaskingOptions ForLanguages(params string[] languageCodes) => new()
     {
         LanguageCodes = languageCodes,
-        TypesToMask = PIIType.Common,
+        TypesToMask = RegionTypes(languageCodes),
         Strategy = MaskingStrategy.Token
     };
 

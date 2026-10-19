@@ -504,6 +504,26 @@ public class PIIMaskerTests
         Assert.Equal(3, options.LanguageCodes.Count);
     }
 
+    [Theory]
+    [InlineData("ko")]
+    [InlineData("ko-KR")]
+    [InlineData("KO")]
+    public void Options_KoreanPreset_AddsThePipaUniqueIdentifiers(string code)
+    {
+        Assert.Equal(PIIType.Common | PIIType.Passport | PIIType.DriversLicense, PIIMaskingOptions.ForLanguage(code).TypesToMask);
+        Assert.Equal(PIIType.Common | PIIType.Passport | PIIType.DriversLicense,
+            PIIMaskingOptions.ForLanguages("en-US", code).TypesToMask);
+    }
+
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("ja")]
+    [InlineData("auto")]
+    public void Options_OtherRegionPresets_StayAtCommon(string code)
+    {
+        Assert.Equal(PIIType.Common, PIIMaskingOptions.ForLanguage(code).TypesToMask);
+    }
+
     [Fact]
     public void Options_Strict_UsesAllTypesLowConfidence()
     {
