@@ -102,6 +102,31 @@ public class TokenBoundaryTests
     }
 
     [Theory]
+    [InlineData("2026-10-20T10:24:03.5968830+00:00 host sshd: session opened")]   // round-trip "O" format, offset
+    [InlineData("2026-10-20 10:24:03.5968830 host sshd: session opened")]         // space-separated, no offset
+    [InlineData("2026-10-20T10:24:03.5968830Z host sshd: session opened")]
+    [InlineData("2026-10-20T10:24:03.596883+09:00 host sshd: session opened")]
+    [InlineData("elapsed 00:00:02.5551234")]                                       // TimeSpan "c" format
+    public void Mask_TimeOfDayOrColonGroups_ReportsNothing(string text)
+    {
+        var result = AllTypesAllCountries().Mask(text);
+
+        Assert.True(result.Matches.Count == 0, Describe(result.Matches));
+        Assert.Equal(text, result.MaskedText);
+    }
+
+    [Theory]
+    [InlineData("10:24:03 call 02-555-1234", "02-555-1234")]                       // a phone after a time, space-separated
+    [InlineData("Tel:010-1234-5678", "010-1234-5678")]                             // a label colon
+    [InlineData("연락처:02.5968.8830", "02.5968.8830")]
+    public void Detect_PhoneAfterTimeOrLabelColon_StillReported(string text, string expected)
+    {
+        var matches = AllTypesAllCountries().Detect(text);
+
+        Assert.Contains(matches, m => m.Type == PIIType.Phone && m.Value == expected);
+    }
+
+    [Theory]
     [InlineData("ID-901231-1234567", "901231-1234567")]
     [InlineData("range 10.0.0.1-10.0.0.254", "10.0.0.1")]
     [InlineData("range 10.0.0.1-10.0.0.254", "10.0.0.254")]

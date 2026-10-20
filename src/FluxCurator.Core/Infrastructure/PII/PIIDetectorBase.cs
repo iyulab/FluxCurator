@@ -30,17 +30,18 @@ public abstract class PIIDetectorBase : IPIIDetector
     protected const string TokenEnd = "(?![0-9A-Za-z])";
 
     /// <summary>
-    /// <see cref="TokenStart"/>, and additionally not a group of a longer hyphenated number: a match does not start
-    /// right after a digit and a hyphen. Use it for numeric identifiers, so the last group of
-    /// <c>550e8400-e29b-41d4-a716-446655440000</c> is not read as a twelve-digit ID on its own.
+    /// <see cref="TokenStart"/>, and additionally not a group of a longer hyphenated or colon-separated number: a
+    /// match does not start right after a digit and a hyphen, or a digit and a colon. Use it for numeric
+    /// identifiers, so the last group of <c>550e8400-e29b-41d4-a716-446655440000</c> is not read as a twelve-digit
+    /// ID on its own, and the seconds of <c>10:24:03.5968830</c> are not read as a phone number.
     /// </summary>
-    protected const string NumberStart = TokenStart + "(?<![0-9]-)";
+    protected const string NumberStart = TokenStart + "(?<![0-9][-:])";
 
     /// <summary>
     /// The counterpart of <see cref="NumberStart"/>: <see cref="TokenEnd"/>, and a match does not end right before
-    /// a hyphen and a digit.
+    /// a hyphen and a digit, or a colon and a digit.
     /// </summary>
-    protected const string NumberEnd = "(?!-[0-9])" + TokenEnd;
+    protected const string NumberEnd = "(?![-:][0-9])" + TokenEnd;
 
     /// <inheritdoc/>
     public abstract PIIType PIIType { get; }

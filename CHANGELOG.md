@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [Unreleased]
+
+### Fixed
+- **The seconds of a time of day are no longer masked as a phone number.** With seven fractional digits (the .NET
+  round-trip `"O"` format, e.g. `2026-10-20T10:24:03.5968830+00:00`, or a `TimeSpan` such as `00:00:02.5551234`) the
+  phone detector read `03.5968830` as a Korean landline and masked the timestamp's seconds. Numeric detectors now treat
+  a digit run joined by a colon to another digit as a group of a longer number, the same way they already treated
+  hyphens: a match does not start right after `<digit>:` or end right before `:<digit>`. A phone after a label colon
+  (`Tel:010-1234-5678`) or after a space-separated time is still reported.
+
 ## [0.18.0] - 2026-10-19
 
 ### Changed
