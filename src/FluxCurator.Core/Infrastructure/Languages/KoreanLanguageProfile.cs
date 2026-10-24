@@ -72,12 +72,6 @@ public sealed partial class KoreanLanguageProfile : LanguageProfileBase
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => KoreanAbbreviations;
 
-    /// <summary>
-    /// Korean text has approximately 1.5-2 characters per token on average
-    /// due to the Hangul syllable structure.
-    /// </summary>
-    protected override float CharsPerToken => 2.0f;
-
     /// <inheritdoc/>
     public override IReadOnlyList<int> FindSentenceBoundaries(string text)
     {
@@ -135,45 +129,6 @@ public sealed partial class KoreanLanguageProfile : LanguageProfileBase
         headers.Sort((a, b) => a.Start.CompareTo(b.Start));
 
         return headers;
-    }
-
-    /// <inheritdoc/>
-    public override int EstimateTokenCount(string text)
-    {
-        if (string.IsNullOrEmpty(text))
-            return 0;
-
-        int tokenCount = 0;
-
-        // Count Hangul characters (roughly 1-2 tokens per character)
-        int hangulCount = 0;
-        int otherCount = 0;
-
-        foreach (char c in text)
-        {
-            if (IsHangul(c))
-                hangulCount++;
-            else if (!char.IsWhiteSpace(c))
-                otherCount++;
-        }
-
-        // Korean: ~2 chars per token, English/other: ~4 chars per token
-        tokenCount = (int)Math.Ceiling(hangulCount / 1.5f) + (int)Math.Ceiling(otherCount / 4.0f);
-
-        return Math.Max(1, tokenCount);
-    }
-
-    /// <summary>
-    /// Determines if a character is a Hangul syllable or Jamo.
-    /// </summary>
-    private static bool IsHangul(char c)
-    {
-        // Hangul Syllables: U+AC00 - U+D7A3
-        // Hangul Jamo: U+1100 - U+11FF
-        // Hangul Compatibility Jamo: U+3130 - U+318F
-        return (c >= '\uAC00' && c <= '\uD7A3') ||
-               (c >= '\u1100' && c <= '\u11FF') ||
-               (c >= '\u3130' && c <= '\u318F');
     }
 
     /// <summary>

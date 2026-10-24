@@ -1,5 +1,7 @@
 namespace FluxCurator.Core.Infrastructure.Languages;
 
+using TokenEstimation;
+
 /// <summary>
 /// Language profile for Chinese (Simplified/Traditional) text processing.
 /// </summary>
@@ -39,11 +41,6 @@ public sealed class ChineseLanguageProfile : LanguageProfileBase
 
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => ChineseAbbreviations;
-
-    /// <summary>
-    /// Chinese text has approximately 1.5 characters per token due to ideographic nature.
-    /// </summary>
-    protected override float CharsPerToken => 1.5f;
 }
 
 /// <summary>
@@ -85,11 +82,6 @@ public sealed class JapaneseLanguageProfile : LanguageProfileBase
 
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => JapaneseAbbreviations;
-
-    /// <summary>
-    /// Japanese text has approximately 1.5 characters per token.
-    /// </summary>
-    protected override float CharsPerToken => 1.5f;
 }
 
 /// <summary>
@@ -138,10 +130,9 @@ public sealed class SpanishLanguageProfile : LanguageProfileBase
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => SpanishAbbreviations;
 
-    /// <summary>
-    /// Spanish text has approximately 4.5 characters per token.
-    /// </summary>
-    protected override float CharsPerToken => 4.5f;
+    /// <inheritdoc/>
+    /// <remarks>Fitted to o200k_base on Spanish Wikipedia paragraphs (2026-10-24).</remarks>
+    private protected override CharTokenRatios TokenRatios { get; } = CharTokenRatios.O200k with { Latin = 5.2 };
 }
 
 /// <summary>
@@ -188,11 +179,6 @@ public sealed class FrenchLanguageProfile : LanguageProfileBase
 
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => FrenchAbbreviations;
-
-    /// <summary>
-    /// French text has approximately 4.5 characters per token.
-    /// </summary>
-    protected override float CharsPerToken => 4.5f;
 }
 
 /// <summary>
@@ -240,10 +226,9 @@ public sealed class GermanLanguageProfile : LanguageProfileBase
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => GermanAbbreviations;
 
-    /// <summary>
-    /// German text has approximately 5 characters per token due to compound words.
-    /// </summary>
-    protected override float CharsPerToken => 5.0f;
+    /// <inheritdoc/>
+    /// <remarks>Fitted to o200k_base on German Wikipedia paragraphs (2026-10-24).</remarks>
+    private protected override CharTokenRatios TokenRatios { get; } = CharTokenRatios.O200k with { Latin = 5.0 };
 }
 
 /// <summary>
@@ -277,11 +262,6 @@ public sealed class ArabicLanguageProfile : LanguageProfileBase
 
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => ArabicAbbreviations;
-
-    /// <summary>
-    /// Arabic text has approximately 3 characters per token.
-    /// </summary>
-    protected override float CharsPerToken => 3.0f;
 }
 
 /// <summary>
@@ -317,11 +297,6 @@ public sealed class HindiLanguageProfile : LanguageProfileBase
 
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => HindiAbbreviations;
-
-    /// <summary>
-    /// Hindi text has approximately 3 characters per token.
-    /// </summary>
-    protected override float CharsPerToken => 3.0f;
 }
 
 /// <summary>
@@ -369,11 +344,6 @@ public sealed class PortugueseLanguageProfile : LanguageProfileBase
 
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => PortugueseAbbreviations;
-
-    /// <summary>
-    /// Portuguese text has approximately 4.5 characters per token.
-    /// </summary>
-    protected override float CharsPerToken => 4.5f;
 }
 
 /// <summary>
@@ -422,10 +392,9 @@ public sealed class VietnameseLanguageProfile : LanguageProfileBase
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => VietnameseAbbreviations;
 
-    /// <summary>
-    /// Vietnamese text has approximately 4 characters per token (syllable-based).
-    /// </summary>
-    protected override float CharsPerToken => 4.0f;
+    /// <inheritdoc/>
+    /// <remarks>Fitted to o200k_base on Vietnamese Wikipedia paragraphs (2026-10-24).</remarks>
+    private protected override CharTokenRatios TokenRatios { get; } = CharTokenRatios.O200k with { Latin = 4.0, Other = 4.0 };
 }
 
 /// <summary>
@@ -468,11 +437,9 @@ public sealed class ThaiLanguageProfile : LanguageProfileBase
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => ThaiAbbreviations;
 
-    /// <summary>
-    /// Thai text has approximately 2 characters per token.
-    /// Thai characters are more compact in meaning.
-    /// </summary>
-    protected override float CharsPerToken => 2.0f;
+    /// <inheritdoc/>
+    /// <remarks>Fitted to o200k_base on Thai Wikipedia paragraphs (2026-10-24).</remarks>
+    private protected override CharTokenRatios TokenRatios { get; } = CharTokenRatios.O200k with { Other = 2.3 };
 }
 
 /// <summary>
@@ -520,8 +487,7 @@ public sealed class RussianLanguageProfile : LanguageProfileBase
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => RussianAbbreviations;
 
-    /// <summary>
-    /// Russian text has approximately 4 characters per token.
-    /// </summary>
-    protected override float CharsPerToken => 4.0f;
+    /// <inheritdoc/>
+    /// <remarks>Fitted to o200k_base on Russian Wikipedia paragraphs (2026-10-24).</remarks>
+    private protected override CharTokenRatios TokenRatios { get; } = CharTokenRatios.O200k with { Other = 4.0 };
 }

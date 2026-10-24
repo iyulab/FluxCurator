@@ -2,6 +2,7 @@ namespace FluxCurator.Core.Infrastructure.Languages;
 
 using System.Text.RegularExpressions;
 using FluxCurator.Core.Core;
+using TokenEstimation;
 
 /// <summary>
 /// Base implementation for language profiles with common functionality.
@@ -25,12 +26,6 @@ public abstract partial class LanguageProfileBase : ILanguageProfile
 
     /// <inheritdoc/>
     public abstract IReadOnlySet<string> Abbreviations { get; }
-
-    /// <summary>
-    /// Gets the average characters per token for this language.
-    /// Used for token count estimation.
-    /// </summary>
-    protected virtual float CharsPerToken => 4.0f;
 
     /// <summary>
     /// Gets the compiled sentence end regex.
@@ -113,14 +108,24 @@ public abstract partial class LanguageProfileBase : ILanguageProfile
         return headers;
     }
 
+    /// <summary>
+    /// Characters per token for each kind of character. A profile whose language spends more tokens on a kind than
+    /// English text does (German compounds, Spanish inflection, Thai or Vietnamese script) overrides the ratio of that kind,
+    /// fitted to o200k_base on that language's text; the other kinds keep the shared values, so mixed text stays consistent.
+    /// </summary>
+    private protected virtual CharTokenRatios TokenRatios => CharTokenRatios.O200k;
+
     /// <inheritdoc/>
+    /// <remarks>
+    /// Charged per kind of character (Latin, Hangul, kana, Han, digits, punctuation, whitespace runs, other scripts) at
+    /// ratios fitted to o200k_base (<see cref="TokenRatios"/>).
+    /// </remarks>
     public virtual int EstimateTokenCount(string text)
     {
         if (string.IsNullOrEmpty(text))
             return 0;
 
-        // Simple estimation based on character count and language-specific ratio
-        return (int)Math.Ceiling(text.Length / CharsPerToken);
+        return Math.Max(1, CharTokenEstimator.Count(text, TokenRatios));
     }
 
     /// <summary>

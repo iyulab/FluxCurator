@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
+## [Unreleased]
+
+### Changed
+- **Breaking: token estimates — and so chunk sizes — are charged per kind of character.** Every built-in
+  `ILanguageProfile.EstimateTokenCount` charges each kind of character (Latin letters, Hangul, kana, Han, digits,
+  punctuation, whitespace runs, other scripts) at ratios fitted to the o200k_base tokenizer — the estimator IndexThinking,
+  FluxIndex and MemoryIndexer use — instead of one characters-per-token figure per language. The German, Spanish,
+  Vietnamese, Thai and Russian profiles charge their own letters at a ratio fitted to that language. Estimate / o200k over a
+  set of texts, before → after: English chat 1.21 → 1.02, Korean passages 0.74 → 1.00, mixed Korean/English notes
+  0.68 → 0.98, JSON 0.72 → 0.97, Chinese 0.77 → 0.91; the five fitted languages are within a few percent of 1.00 (fitted on
+  the same sample). Chunkers that size by `MaxChunkSize` tokens therefore cut English into larger chunks and Korean, mixed
+  text and JSON into smaller ones. `LanguageProfileBase.CharsPerToken` is removed. Migration: a custom profile that
+  overrode `CharsPerToken` overrides `EstimateTokenCount` instead.
+
 ## [0.18.1] - 2026-10-20
 
 ### Fixed

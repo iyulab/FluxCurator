@@ -324,15 +324,14 @@ public class ChineseLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_ChineseText_UsesCorrectRatio()
+    public void EstimateTokenCount_ChineseText_ChargedPerCharacterKind()
     {
-        // Chinese: 1.5 chars per token
-        // 15 chars / 1.5 = 10 tokens
+        // 15 Han characters at 1.2 per token = 12.5 → 13
         var text = "你好世界欢迎来到这里测试测试测";
 
         var count = _profile.EstimateTokenCount(text);
 
-        Assert.Equal(10, count);
+        Assert.Equal(13, count);
     }
 
     [Fact]
@@ -394,15 +393,14 @@ public class JapaneseLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_JapaneseText_UsesCorrectRatio()
+    public void EstimateTokenCount_JapaneseText_ChargedPerCharacterKind()
     {
-        // Japanese: 1.5 chars per token
-        // 6 chars / 1.5 = 4 tokens
+        // 3 kana at 1.5 + 4 Han at 1.2 = 5.3 → 6
         var text = "日本語テスト文";
 
         var count = _profile.EstimateTokenCount(text);
 
-        Assert.True(count >= 4);
+        Assert.Equal(6, count);
     }
 
     [Fact]
@@ -463,13 +461,12 @@ public class SpanishLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_SpanishText_UsesCorrectRatio()
+    public void EstimateTokenCount_SpanishText_ChargedPerCharacterKind()
     {
-        // Spanish: 4.5 chars per token
-        // "Hola mundo" = 10 chars / 4.5 ≈ 3 tokens (Ceiling)
+        // 9 Latin letters at 5.2 (fitted to Spanish) + 1 whitespace run at 2.75 = 2.1 → 3
         var count = _profile.EstimateTokenCount("Hola mundo");
 
-        Assert.True(count >= 2 && count <= 4);
+        Assert.Equal(3, count);
     }
 
     [Fact]
@@ -540,13 +537,12 @@ public class FrenchLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_FrenchText_UsesCorrectRatio()
+    public void EstimateTokenCount_FrenchText_ChargedPerCharacterKind()
     {
-        // French: 4.5 chars per token
-        // "Bonjour" = 7 chars / 4.5 ≈ 2 tokens
+        // 7 Latin letters at 7 per token = 1
         var count = _profile.EstimateTokenCount("Bonjour");
 
-        Assert.Equal(2, count);
+        Assert.Equal(1, count);
     }
 
     [Fact]
@@ -607,22 +603,30 @@ public class GermanLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_GermanText_UsesCorrectRatio()
+    public void EstimateTokenCount_GermanText_ChargedPerCharacterKind()
     {
-        // German: 5.0 chars per token (compound words)
-        // "Hallo" = 5 chars / 5.0 = 1 token
+        // 5 Latin letters at 5.0 (fitted to German) = 1
         var count = _profile.EstimateTokenCount("Hallo");
 
         Assert.Equal(1, count);
     }
 
     [Fact]
-    public void EstimateTokenCount_GermanCompoundWord_HigherTokenCount()
+    public void EstimateTokenCount_FittedRatio_LeavesOtherKindsAlone()
     {
-        // "Geschwindigkeitsbegrenzung" = 26 chars / 5.0 = 6 tokens (Ceiling)
+        // The German Latin ratio applies to Latin letters only: Hangul is charged as every profile charges it
+        var korean = "안녕하세요 반갑습니다";
+
+        Assert.Equal(new EnglishLanguageProfile().EstimateTokenCount(korean), _profile.EstimateTokenCount(korean));
+    }
+
+    [Fact]
+    public void EstimateTokenCount_GermanCompoundWord_ChargedPerCharacterKind()
+    {
+        // 26 Latin letters at 5.0 (fitted to German) = 5.2 → 6
         var count = _profile.EstimateTokenCount("Geschwindigkeitsbegrenzung");
 
-        Assert.True(count >= 5 && count <= 7);
+        Assert.Equal(6, count);
     }
 
     [Fact]
@@ -684,15 +688,14 @@ public class ArabicLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_ArabicText_UsesCorrectRatio()
+    public void EstimateTokenCount_ArabicText_ChargedPerCharacterKind()
     {
-        // Arabic: 3.0 chars per token
-        // 9 chars / 3.0 = 3 tokens
+        // 9 Arabic letters at 3.5 (other scripts) + 1 whitespace run at 2.75 = 2.9 → 3
         var text = "مرحبا بالع";
 
         var count = _profile.EstimateTokenCount(text);
 
-        Assert.True(count >= 3);
+        Assert.Equal(3, count);
     }
 
     [Fact]
@@ -753,10 +756,9 @@ public class HindiLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_HindiText_UsesCorrectRatio()
+    public void EstimateTokenCount_HindiText_ChargedPerCharacterKind()
     {
-        // Hindi: 3.0 chars per token
-        // "नमस्ते" = 6 chars / 3.0 = 2 tokens
+        // 6 Devanagari code units at 3.5 (other scripts) = 1.7 → 2
         var count = _profile.EstimateTokenCount("नमस्ते");
 
         Assert.Equal(2, count);
@@ -818,10 +820,9 @@ public class PortugueseLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_PortugueseText_UsesCorrectRatio()
+    public void EstimateTokenCount_PortugueseText_ChargedPerCharacterKind()
     {
-        // Portuguese: 4.5 chars per token
-        // "Olá mundo" = 9 chars / 4.5 = 2 tokens
+        // 8 Latin letters at 7 + 1 whitespace run at 2.75 = 1.5 → 2
         var count = _profile.EstimateTokenCount("Olá mundo");
 
         Assert.Equal(2, count);
@@ -896,13 +897,12 @@ public class VietnameseLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_VietnameseText_UsesCorrectRatio()
+    public void EstimateTokenCount_VietnameseText_ChargedPerCharacterKind()
     {
-        // Vietnamese: 4.0 chars per token
-        // "Xin chào" = 8 chars / 4.0 = 2 tokens
+        // 7 Latin letters at 4.0 (fitted to Vietnamese) + 1 whitespace run at 2.75 = 2.1 → 3
         var count = _profile.EstimateTokenCount("Xin chào");
 
-        Assert.Equal(2, count);
+        Assert.Equal(3, count);
     }
 
     [Fact]
@@ -979,10 +979,9 @@ public class ThaiLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_ThaiText_UsesCorrectRatio()
+    public void EstimateTokenCount_ThaiText_ChargedPerCharacterKind()
     {
-        // Thai: 2.0 chars per token
-        // "สวัสดี" = 6 chars / 2.0 = 3 tokens
+        // 6 Thai code units at 2.3 (fitted to Thai) = 2.6 → 3
         var count = _profile.EstimateTokenCount("สวัสดี");
 
         Assert.Equal(3, count);
@@ -1044,10 +1043,9 @@ public class RussianLanguageProfileTests
     }
 
     [Fact]
-    public void EstimateTokenCount_RussianText_UsesCorrectRatio()
+    public void EstimateTokenCount_RussianText_ChargedPerCharacterKind()
     {
-        // Russian: 4.0 chars per token
-        // "Привет" = 6 chars / 4.0 = 2 tokens (Ceiling)
+        // 6 Cyrillic letters at 4.0 (fitted to Russian) = 1.5 → 2
         var count = _profile.EstimateTokenCount("Привет");
 
         Assert.Equal(2, count);

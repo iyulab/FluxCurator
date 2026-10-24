@@ -46,9 +46,4 @@ public sealed class EnglishLanguageProfile : LanguageProfileBase
 
     /// <inheritdoc/>
     public override IReadOnlySet<string> Abbreviations => EnglishAbbreviations;
-
-    /// <summary>
-    /// English text has approximately 4 characters per token on average.
-    /// </summary>
-    protected override float CharsPerToken => 4.0f;
 }

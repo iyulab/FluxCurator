@@ -204,7 +204,7 @@ var chunks = await curator.ChunkAsync(extractedText);
 | Feature | Description |
 |---------|-------------|
 | Sentence Detection | Recognizes Korean endings: 습니다, 입니다, 세요, 에요, etc. |
-| Token Estimation | ~1.5-2 characters per token (vs ~4 for English) |
+| Token Estimation | ~1.35 Hangul per token, the same character-kind estimate every profile uses |
 | Section Markers | Supports 제1장, 제1절, Korean bullets (ㅇ, ○, ●, □, ■) |
 | Text Refinement | `TextRefineOptions.ForKorean` removes 댓글 sections, copyright notices |
 

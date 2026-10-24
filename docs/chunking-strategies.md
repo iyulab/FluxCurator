@@ -95,11 +95,15 @@ var chunks = await chunker.ChunkAsync(text, options);
 
 ### Token Estimation
 
-FluxCurator estimates tokens using language-aware heuristics:
+FluxCurator estimates tokens per kind of character, at ratios fitted to the o200k_base tokenizer:
 
-- **English**: ~4 characters per token
-- **Korean**: ~2-3 characters per token (due to complex characters)
-- **CJK**: ~1.5-2 characters per token
+- **Latin letters**: ~7 per token, plus ~0.36 for each whitespace run
+- **Hangul**: ~1.35 per token
+- **Kana** ~1.5, **Han** ~1.2 per token; digits ~1.3, punctuation ~1.25
+- **Other scripts** (Cyrillic, Arabic, Devanagari, Thai, …): ~3.5 per token
+
+The German (Latin ~5.0), Spanish (~5.2), Vietnamese (~4.0), Thai (~2.3) and Russian (~4.0) profiles charge their own
+letters at a ratio fitted to that language; every other kind keeps the values above, so mixed text is charged consistently.
 
 ### When to Use
 
