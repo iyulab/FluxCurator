@@ -6,6 +6,12 @@ breaking changes, and each one is marked **Breaking** with a migration note.
 
 ## [Unreleased]
 
+### Added
+- **`MarkdownFences` (`FluxCurator.Core.Infrastructure.Refining`): the fenced-code-block scan, public.** `FindRanges`, `Contains`, `LineMask` and `Shield` / `Shielded(text, step)` - runs a text-level step of your own over a Markdown text with each fenced block (backtick or tilde, a longer fence closed only by an equal or longer one, an unclosed fence to the end, a fence in a list item) hidden behind one placeholder line and put back exactly as written; a step that loses the placeholder is skipped for that text instead of losing code.
+
+### Fixed
+- **`TextRefiner.Refine` (and `Curator.RefineText` / `WithTextRefinement`) leaves a Markdown fenced code block exactly as written, with every preset.** The refiner tidies prose, and applied its steps inside code too: lines lost their indentation, a line that repeats (`}` `}` `}`) was collapsed to one, blank-line runs were cut, trailing spaces were stripped, `RemovePatterns` / `ReplacePatterns` rewrote code. Fenced blocks are now hidden from every step (`MarkdownFences.Shielded`). **Observable:** a custom pattern no longer matches inside a fenced block; text without a fence is refined as before.
+
 ### Dependencies
 
 - Re-pinned third-party packages: 1 .NET servicing pins (Microsoft.Extensions) 10.0.13 -> 10.0.14 (the 10.0.14 security servicing release).

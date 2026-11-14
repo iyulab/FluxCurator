@@ -22,11 +22,22 @@ public sealed partial class TextRefiner : ITextRefiner
     }
 
     /// <inheritdoc/>
+    /// <remarks>
+    /// The text is prose: a Markdown fenced code block (backtick or tilde fence, a longer fence, an unclosed fence to the
+    /// end of the text) is code and comes back exactly as written - its indentation, repeated lines, blank lines and
+    /// trailing spaces are the code's own, so no step below, custom patterns included, applies inside it
+    /// (<see cref="MarkdownFences.Shielded"/>).
+    /// </remarks>
     public string Refine(string text, TextRefineOptions options)
     {
         if (string.IsNullOrEmpty(text))
             return text;
 
+        return MarkdownFences.Shielded(text, source => RefineProse(source, options));
+    }
+
+    private static string RefineProse(string text, TextRefineOptions options)
+    {
         var result = text;
 
         // ========================================
