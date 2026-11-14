@@ -95,6 +95,49 @@ public class TextRefinerFencedCodeTests
     }
 
     [Fact]
+    public void A_custom_pattern_that_removes_html_comments_does_not_skip_the_refinement()
+    {
+        // The placeholder of a hidden block is not markup: a «<!--.*?-->» pattern leaves it, and the other steps still run.
+        var options = new TextRefineOptions { RemoveDuplicateLines = true, RemovePatterns = ["<!--.*?-->"] };
+        const string text = "dup\ndup\n```\n  c  \n```\n";
+
+        var result = TextRefiner.Instance.Refine(text, options);
+
+        Assert.Equal("dup\n```\n  c  \n```\n", result);
+    }
+
+    [Theory]
+    [MemberData(nameof(Presets))]
+    public void A_preset_that_collapses_whitespace_keeps_the_fences_on_lines_of_their_own(string preset)
+    {
+        const string text = "Intro\n\n```sh\nls\n```\n\nOutro\n";
+
+        var result = TextRefiner.Instance.Refine(text, Preset(preset));
+
+        Assert.Matches("(^|\n)```sh\nls\n```(\n|$)", result);
+    }
+
+    [Fact]
+    public void Separator_banners_of_tildes_are_not_a_fenced_block()
+    {
+        var result = TextRefiner.Instance.Refine("~~~~~~\nSection A\n~~~~~~\nSection B\n~~~~~~\n", new TextRefineOptions { NormalizeSeparators = true });
+
+        Assert.Equal(3, result.Split('\n').Count(line => line == "---"));
+    }
+
+    [Fact]
+    public void The_shield_can_be_used_directly_and_maps_offsets_back()
+    {
+        const string text = "ab\n```\nx\ny\n```\ncd\n";
+
+        MarkdownFences.FenceShield shield = MarkdownFences.Shield(text);
+
+        Assert.False(shield.IsEmpty);
+        Assert.Equal(text, shield.Restore(shield.Text));
+        Assert.Equal(text.IndexOf("cd", StringComparison.Ordinal), shield.ToOriginalOffset(shield.Text.IndexOf("cd", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public void A_line_of_tildes_is_still_a_separator()
     {
         Assert.Equal("---", TextRefiner.Instance.Refine("~~~~~", new TextRefineOptions { NormalizeSeparators = true }));
