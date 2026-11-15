@@ -163,6 +163,18 @@ public sealed class MarkdownFencesModelLayerTests
         Assert.True(shield.UnsafeToSend);
     }
 
+    [Theory]
+    [InlineData("A private-use  character\n\n```text\ncode\n```\n")]
+    [InlineData("A page about the marker:\n\n[[code-block 0]]\n\n```text\ncode\n```\n")]
+    public void An_unsafe_text_never_gets_an_answer_restored(string text)
+    {
+        var shield = MarkdownFences.Shield(text);
+
+        Assert.True(shield.UnsafeToSend);
+        Assert.Null(shield.RestoreModelAnswer(shield.ModelText));
+        Assert.Null(shield.RestoreModelAnswer("anything"));
+    }
+
     [Fact]
     public void A_text_that_holds_the_placeholder_delimiters_but_no_fenced_code_is_not_unsafe()
     {

@@ -164,10 +164,26 @@ public abstract class ChunkerBase : IChunker
 
     /// <summary>
     /// Puts an overlap in front of <paramref name="nextSlice"/>, the text of the document that follows it: the whitespace the
-    /// overlap carries is dropped when the slice starts with whitespace of its own, so a break is never written twice.
+    /// overlap carries is dropped when the slice already starts with a line break of its own, so a break is never written
+    /// twice. A slice that starts with indentation only (spaces of a fenced block inside a list item) has no line break of its
+    /// own, and the overlap keeps the one it carries.
     /// </summary>
     protected static void AppendOverlap(System.Text.StringBuilder buffer, string overlap, string nextSlice, ChunkOptions options) =>
-        buffer.Append(options.TrimWhitespace && nextSlice.Length > 0 && char.IsWhiteSpace(nextSlice[0]) ? overlap.TrimEnd() : overlap);
+        buffer.Append(options.TrimWhitespace && StartsWithLineBreak(nextSlice) ? overlap.TrimEnd() : overlap);
+
+    private static bool StartsWithLineBreak(string text)
+    {
+        foreach (var c in text)
+        {
+            if (c is '\n' or '\r')
+                return true;
+
+            if (!char.IsWhiteSpace(c))
+                return false;
+        }
+
+        return false;
+    }
 
     /// <summary>
     /// Extracts overlap content from the end of a chunk.

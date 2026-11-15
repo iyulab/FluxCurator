@@ -66,6 +66,21 @@ public sealed class ChunkOverlapSeamTests
         Assert.Empty(fused);
     }
 
+    /// <summary>An indented fence (a code block inside a list item): the paragraph slice starts with spaces, not with a line break.</summary>
+    private static string IndentedCode() =>
+        string.Join("\n", Enumerable.Range(0, 30).Select(i =>
+            "Step " + i + " is done and checked.\n\n    ```bash\n    run-step " + i + "\n    ```\n"));
+
+    [Theory]
+    [InlineData(30)]
+    [InlineData(60)]
+    public async Task The_overlap_does_not_fuse_with_a_paragraph_that_starts_with_indentation(int overlap)
+    {
+        var fused = await FusedLinesAsync(IndentedCode(), Options(trim: true, overlap));
+
+        Assert.Empty(fused);
+    }
+
     [Fact]
     public async Task The_overlap_recorded_in_the_metadata_is_the_text_without_the_break_it_carries()
     {
