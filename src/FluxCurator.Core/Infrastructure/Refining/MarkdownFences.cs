@@ -125,7 +125,7 @@ public static class MarkdownFences
     }
 
     private static string Placeholder(int index) =>
-        PlaceholderStart + PlaceholderLabel + string.Join('x', index.ToString(CultureInfo.InvariantCulture)) + PlaceholderEnd;
+        PlaceholderStart + PlaceholderLabel + string.Join('x', index.ToString(CultureInfo.InvariantCulture).AsEnumerable()) + PlaceholderEnd;
 
     private static int CountNewlines(string text, int start, int end)
     {
