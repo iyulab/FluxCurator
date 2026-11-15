@@ -77,7 +77,7 @@ public sealed class ParagraphChunker : ChunkerBase
                 // Add overlap to new chunk if needed
                 if (!string.IsNullOrEmpty(overlapContent))
                 {
-                    currentChunkContent.Append(overlapContent);
+                    AppendOverlap(currentChunkContent, overlapContent, paragraph, options);
                     currentTokenCount = profile.EstimateTokenCount(overlapContent);
                 }
 
@@ -151,9 +151,8 @@ public sealed class ParagraphChunker : ChunkerBase
         ChunkOptions options,
         ref string? overlapContent)
     {
-        var chunkText = content.ToString();
-        if (options.TrimWhitespace)
-            chunkText = chunkText.Trim();
+        var rawText = content.ToString();
+        var chunkText = options.TrimWhitespace ? rawText.Trim() : rawText;
 
         if (string.IsNullOrWhiteSpace(chunkText))
             return;
@@ -173,9 +172,7 @@ public sealed class ParagraphChunker : ChunkerBase
         chunks.Add(chunk);
 
         // Prepare overlap for next chunk
-        overlapContent = options.OverlapSize > 0
-            ? ExtractOverlapContent(chunkText, options.OverlapSize, profile)
-            : null;
+        overlapContent = ExtractOverlapContent(rawText, options, profile);
     }
 
     /// <summary>
@@ -202,7 +199,7 @@ public sealed class ParagraphChunker : ChunkerBase
         // Add overlap if available
         if (!string.IsNullOrEmpty(overlapContent))
         {
-            currentContent.Append(overlapContent);
+            AppendOverlap(currentContent, overlapContent, paragraph, options);
             currentTokens = profile.EstimateTokenCount(overlapContent);
         }
 
@@ -214,9 +211,8 @@ public sealed class ParagraphChunker : ChunkerBase
             if (currentTokens + sentenceTokens > options.MaxChunkSize && currentContent.Length > 0)
             {
                 // Finalize current chunk
-                var chunkText = currentContent.ToString();
-                if (options.TrimWhitespace)
-                    chunkText = chunkText.Trim();
+                var rawText = currentContent.ToString();
+                var chunkText = options.TrimWhitespace ? rawText.Trim() : rawText;
 
                 var chunk = CreateChunk(
                     content: chunkText,
@@ -233,9 +229,7 @@ public sealed class ParagraphChunker : ChunkerBase
                 chunks.Add(chunk);
 
                 // Prepare overlap
-                overlapContent = options.OverlapSize > 0
-                    ? ExtractOverlapContent(chunkText, options.OverlapSize, profile)
-                    : null;
+                overlapContent = ExtractOverlapContent(rawText, options, profile);
 
                 // Reset
                 currentContent.Clear();
@@ -244,7 +238,7 @@ public sealed class ParagraphChunker : ChunkerBase
 
                 if (!string.IsNullOrEmpty(overlapContent))
                 {
-                    currentContent.Append(overlapContent);
+                    AppendOverlap(currentContent, overlapContent, sentence, options);
                     currentTokens = profile.EstimateTokenCount(overlapContent);
                 }
             }
@@ -257,9 +251,8 @@ public sealed class ParagraphChunker : ChunkerBase
         // Handle remaining content
         if (currentContent.Length > 0)
         {
-            var chunkText = currentContent.ToString();
-            if (options.TrimWhitespace)
-                chunkText = chunkText.Trim();
+            var rawText = currentContent.ToString();
+            var chunkText = options.TrimWhitespace ? rawText.Trim() : rawText;
 
             var chunk = CreateChunk(
                 content: chunkText,
@@ -275,9 +268,7 @@ public sealed class ParagraphChunker : ChunkerBase
             );
             chunks.Add(chunk);
 
-            overlapContent = options.OverlapSize > 0
-                ? ExtractOverlapContent(chunkText, options.OverlapSize, profile)
-                : null;
+            overlapContent = ExtractOverlapContent(rawText, options, profile);
         }
 
         return chunks;
