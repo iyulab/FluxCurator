@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file. Versions follow
 [Semantic Versioning](https://semver.org/); while the major version is 0, a minor release may contain
 breaking changes, and each one is marked **Breaking** with a migration note.
 
-## [Unreleased]
+## [0.20.0] - 2026-11-16
 
 ### Added
 - **`MarkdownFences` (`FluxCurator.Core.Infrastructure.Refining`): the fenced-code-block scan, public.** `FindRanges`, `Contains`, `LineMask` and `Shield` / `Shielded(text, step)` - runs a text-level step of your own over a Markdown text with each fenced block (backtick or tilde, a longer fence closed only by an equal or longer one, an unclosed fence to the end, a fence in a list item) hidden behind one placeholder line and put back exactly as written; a step that loses the placeholder is skipped for that text instead of losing code. Only a closed fence is hidden (an unclosed one is left to the step), a bare line of four or more tildes is a separator and not a fence, a closing fence indented more than three columns deeper than its opening is code, the placeholder is not markup (a `<!--.*?-->` pattern leaves it) and a block always comes back on lines of its own even when a whitespace preset glued the placeholder to the prose around it; `FenceShield` maps offsets and line numbers of the shielded text back to the original.
